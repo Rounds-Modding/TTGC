@@ -11,11 +11,13 @@ namespace TTGC.Extensions
     {
         public List<Player> minions;
         public bool isAI;
+        public Player spawner;
 
         public CharacterDataAdditionalData()
         {
             minions = new List<Player>() { };
             isAI = false;
+            spawner = null;
         }
     }
     public static class CharacterDataExtension
@@ -45,6 +47,7 @@ namespace TTGC.Extensions
         {
             __instance.data.GetAdditionalData().minions = new List<Player>() { };
             __instance.data.GetAdditionalData().isAI = false;
+            __instance.data.GetAdditionalData().spawner = null;
         }
     }
     

@@ -42,7 +42,8 @@ namespace TTGC
 
             // build all cards
 
-            CustomCard.BuildCard<MinionCardBase>(MinionCardBase.callback);
+            CustomCard.BuildCard<ColdNinjaCard>(ColdNinjaCard.callback);
+            CustomCard.BuildCard<DopplegangerNinjaCard>(DopplegangerNinjaCard.callback);
 
             GameModeManager.AddHook(GameModeHooks.HookBattleStart, MinionCardBase.CreateAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPointEnd, MinionCardBase.RemoveAllAIs);

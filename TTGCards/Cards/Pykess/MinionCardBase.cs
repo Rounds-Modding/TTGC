@@ -20,17 +20,27 @@ namespace TTGC.Cards
 {
     public abstract class MinionCardBase : CustomCard
     {
-        public virtual ModdingUtils.Extensions.BlockModifier GetBlockStats()
+        public virtual ModdingUtils.Extensions.BlockModifier GetBlockStats(Player player)
         { return null; }
-        public virtual ModdingUtils.Extensions.GunAmmoStatModifier GetGunAmmoStats()
+        public virtual ModdingUtils.Extensions.GunAmmoStatModifier GetGunAmmoStats(Player player)
         { return null; }
-        public virtual ModdingUtils.Extensions.GunStatModifier GetGunStats()
+        public virtual ModdingUtils.Extensions.GunStatModifier GetGunStats(Player player)
         { return null; }
-        public virtual ModdingUtils.Extensions.CharacterStatModifiersModifier GetCharacterStats()
+        public virtual ModdingUtils.Extensions.CharacterStatModifiersModifier GetCharacterStats(Player player)
         { return null; }
-        public virtual ModdingUtils.Extensions.GravityModifier GetGravityModifier()
+        public virtual ModdingUtils.Extensions.GravityModifier GetGravityModifier(Player player)
         { return null; }
-        public virtual float? GetMaxHealth()
+        public virtual float? GetMaxHealth(Player player)
+        { return null; }
+        public virtual List<CardInfo> GetCards(Player player)
+        { return null; }
+        public virtual bool CardsAreReassigned(Player player)
+        { return false; }
+        public virtual AIPlayer.AISkill? GetAISkill(Player player)
+        { return null; }
+        public virtual AIPlayer.AIAggression? GetAIAggression(Player player)
+        { return null; }
+        public virtual AIPlayer.AI? GetAI(Player player)
         { return null; }
         public override void SetupCard(CardInfo cardInfo, Gun gun, ApplyCardStats cardStats, CharacterStatModifiers statModifiers)
         {
@@ -38,46 +48,27 @@ namespace TTGC.Cards
         }
         public override void OnAddCard(Player player, Gun gun, GunAmmo gunAmmo, CharacterData data, HealthHandler health, Gravity gravity, Block block, CharacterStatModifiers characterStats)
         {
-            // in sandbox mode? spawn AI immediately
-            if (AIPlayer.sandbox)
+            // AI's can't have AI's
+            if (player.data.GetAdditionalData().isAI)
             {
-                AIPlayer.SpawnAI(player.playerID, player.teamID, activeNow: true);
+                return;
             }
-            else
+
+            // add AI player
+            Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
+        
+            // add cards to AI
+            if (GetCards(player) != null)
             {
-                AIPlayer.SpawnAI(player.playerID, player.teamID, activeNow: false);
+                Unbound.Instance.ExecuteAfterSeconds(0.5f, () =>
+                {
+                    ModdingUtils.Utils.Cards.instance.AddCardsToPlayer(minion, GetCards(player).ToArray(), CardsAreReassigned(player), addToCardBar: false);
+                });
             }
+        
         }
         public override void OnRemoveCard()
         {
-        }
-
-        protected override string GetTitle()
-        {
-            return "TTG Minion";
-        }
-        protected override string GetDescription()
-        {
-            return "";
-        }
-
-        protected override GameObject GetCardArt()
-        {
-            return null;
-        }
-
-        protected override CardInfo.Rarity GetRarity()
-        {
-            return CardInfo.Rarity.Common;
-        }
-
-        protected override CardInfoStat[] GetStats()
-        {
-            return null;
-        }
-        protected override CardThemeColor.CardThemeColorType GetTheme()
-        {
-            return CardThemeColor.CardThemeColorType.TechWhite;
         }
 
         public override string GetModName()
@@ -87,7 +78,6 @@ namespace TTGC.Cards
         internal static void callback(CardInfo card)
         {
             card.gameObject.AddComponent<ExtraName>();
-
         }
 
         private static IEnumerator SpawnWhenReady(Player minionToSpawn, Vector3 position)
