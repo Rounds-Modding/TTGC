@@ -24,9 +24,9 @@ namespace TTGC.Cards
         {
             return new Color(66f / 255f, 209f / 255f, 245f / 255f, 1f);
         }
-        public override AIPlayer.AIAggression? GetAIAggression(Player player)
+        public override AIPlayer.AI? GetAI(Player player)
         {
-            return AIPlayer.AIAggression.Peaceful;
+            return AIPlayer.AI.Petter;
         }
         public override List<CardInfo> GetCards(Player player)
         {

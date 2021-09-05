@@ -420,11 +420,9 @@ namespace TTGC.Cards
             return AIController;
         }
 
-        internal static Player SpawnAI(int spawnerID, int teamID, bool activeNow = false, AISkill? skill = null, AIAggression? aggression = null, System.Type AItype = null)
+        internal static Player SpawnAI(int spawnerID, int teamID, int actorID, bool activeNow = false, AISkill? skill = null, AIAggression? aggression = null, System.Type AItype = null)
         {
-            Player spawner = (Player)typeof(PlayerManager).InvokeMember("GetPlayerWithID",
-                                BindingFlags.Instance | BindingFlags.InvokeMethod |
-                                BindingFlags.NonPublic, null, PlayerManager.instance, new object[] { spawnerID });
+            Player spawner = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(actorID, spawnerID);
 
             System.Type AIController = ChooseAIController(skill, aggression, AItype);
 
@@ -469,66 +467,17 @@ namespace TTGC.Cards
                 Traverse.Create(AIdata.player.data.playerVel).Field("simulated").SetValue(false);
             }
 
-
-
             return AIdata.player;
 
         }
-        internal static Player SpawnAI(int spawnerID, int teamID, bool activeNow = false, AISkill? skill = null, AIAggression? aggression = null, AI? AItype = null)
+        internal static Player SpawnAI(int spawnerID, int teamID, int actorID, bool activeNow = false, AISkill? skill = null, AIAggression? aggression = null, AI? AItype = null)
         {
-            Player spawner = (Player)typeof(PlayerManager).InvokeMember("GetPlayerWithID",
-                    BindingFlags.Instance | BindingFlags.InvokeMethod |
-                    BindingFlags.NonPublic, null, PlayerManager.instance, new object[] { spawnerID });
-
-            System.Type AIController = GetAIType(ChooseAIController(skill, aggression, AItype));
-
-            if (PlayerManager.instance.players.Count >= PlayerAssigner.instance.maxPlayers)
-            {
-                PlayerAssigner.instance.maxPlayers++;
-            }
-
-            if (activeNow)
-            {
-                SoundPlayerStatic.Instance.PlayPlayerAdded();
-            }
-
-            Vector3 position = Vector3.up * 100f;
-            CharacterData AIdata = PhotonNetwork.Instantiate(PlayerAssigner.instance.playerPrefab.name, position, Quaternion.identity, 0, null).GetComponent<CharacterData>();
-            // mark this player as an AI
-            AIdata.GetAdditionalData().isAI = true;
-            // add the spawner to the AI's data
-            AIdata.GetAdditionalData().spawner = spawner;
-            // add AI to spawner's data
-            spawner.data.GetAdditionalData().minions.Add(AIdata.player);
-
-            AIdata.GetComponent<CharacterData>().SetAI(null);
-            UnityEngine.Object.Instantiate<GameObject>(AIBase, AIdata.transform.position, AIdata.transform.rotation, AIdata.transform).AddComponent(AIController);
-
-            AIdata.player.AssignPlayerID(PlayerManager.instance.players.Count);
-            AIdata.player.AssignTeamID(teamID);
-
-            if (activeNow)
-            {
-                PlayerAssigner.instance.players.Add(AIdata);
-                PlayerManager.instance.players.Add(AIdata.player);
-                if ((bool)Traverse.Create(PlayerManager.instance).Field("playersShouldBeActive").GetValue()) { AIdata.isPlaying = true; }
-            }
-            else
-            {
-                AIdata.player.gameObject.SetActive(false);
-                AIdata.player.data.isPlaying = false;
-                AIdata.player.data.gameObject.transform.position = Vector3.up * 200f;
-                Traverse.Create(AIdata.player.data.playerVel).Field("simulated").SetValue(false);
-            }
-
-
-            return AIdata.player;
-
+            return SpawnAI(spawnerID, teamID, actorID, activeNow, skill, aggression, GetAIType(ChooseAIController(skill, aggression, AItype)));
         }
 
-        internal static Player CreateAIWithStats(int spawnerID, int teamID, AISkill? skill = null, AIAggression? aggression = null, System.Type AItype = null, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, bool activeNow = false)
+        internal static Player CreateAIWithStats(int spawnerID, int teamID, int actorID, AISkill? skill = null, AIAggression? aggression = null, System.Type AItype = null, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, bool activeNow = false)
         {
-            Player minion = SpawnAI(spawnerID, teamID, activeNow, skill, aggression, AItype);
+            Player minion = SpawnAI(spawnerID, teamID, actorID, activeNow, skill, aggression, AItype);
 
             if (maxHealth != null)
             {
@@ -557,37 +506,9 @@ namespace TTGC.Cards
 
             return minion;
         }
-        internal static Player CreateAIWithStats(int spawnerID, int teamID, AISkill? skill = null, AIAggression? aggression = null, AI? AI = null, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, bool activeNow = false)
+        internal static Player CreateAIWithStats(int spawnerID, int teamID, int actorID, AISkill? skill = null, AIAggression? aggression = null, AI? AI = null, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, bool activeNow = false)
         {
-            Player minion = SpawnAI(spawnerID, teamID, activeNow, skill, aggression, AI);
-            Unbound.Instance.ExecuteAfterSeconds(0.5f, () =>
-            {
-                if (maxHealth != null)
-                {
-                    minion.data.maxHealth = (float)maxHealth;
-                }
-                if (blockStats != null)
-                {
-                    blockStats.ApplyBlockModifier(minion.data.block);
-                }
-                if (gunAmmoStats != null)
-                {
-                    gunAmmoStats.ApplyGunAmmoStatModifier(minion.GetComponent<Holding>().holdable.GetComponent<Gun>().GetComponentInChildren<GunAmmo>());
-                }
-                if (gunStats != null)
-                {
-                    gunStats.ApplyGunStatModifier(minion.GetComponent<Holding>().holdable.GetComponent<Gun>());
-                }
-                if (gravityStats != null)
-                {
-                    gravityStats.ApplyGravityModifier(minion.GetComponent<Gravity>());
-                }
-                if (characterStats != null)
-                {
-                    characterStats.ApplyCharacterStatModifiersModifier(minion.data.stats);
-                }
-            });
-            return minion;
+            return CreateAIWithStats(spawnerID, teamID, actorID, skill, aggression, GetAIType(ChooseAIController(skill, aggression, AI)), maxHealth, blockStats, gunAmmoStats, gunStats, characterStats, gravityStats, activeNow);
         }
 
         internal static System.Type GetAIType(AI AI)

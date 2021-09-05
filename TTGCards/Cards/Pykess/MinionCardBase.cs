@@ -59,21 +59,21 @@ namespace TTGC.Cards
             }
 
             // add AI player
-            Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
-        
-            // add cards to AI
-            if (GetCards(player) != null)
+            Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
+
+            Unbound.Instance.StartCoroutine(AddCardsWhenReady(minion, player));
+
+            Unbound.Instance.ExecuteAfterSeconds(0.5f, () =>
             {
-                Unbound.Instance.ExecuteAfterSeconds(0.5f, () =>
-                {
-                    ModdingUtils.Utils.Cards.instance.AddCardsToPlayer(minion, GetCards(player).ToArray(), CardsAreReassigned(player), addToCardBar: false);
 
-                    minion.data.view.RPC("RPCA_SetFace", RpcTarget.All, new object[] {63, new Vector2(0f, -0.5f), 19, new Vector2(0f,-0.5f), 14, new Vector2(0f,1.1f), 0, new Vector2(0f,0f) });
+                minion.data.view.RPC("RPCA_SetFace", RpcTarget.All, new object[] { 63, new Vector2(0f, -0.5f), 19, new Vector2(0f, -0.5f), 14, new Vector2(0f, 1.1f), 0, new Vector2(0f, 0f) });
 
-                    minion.gameObject.GetComponentsInChildren<SpriteRenderer>().Where(renderer => renderer.gameObject.name.Contains("P_A_X6")).First().color = GetBandanaColor(player);
+                minion.gameObject.GetComponentsInChildren<SpriteRenderer>().Where(renderer => renderer.gameObject.name.Contains("P_A_X6")).First().color = GetBandanaColor(player);
 
-                });
-            }
+            });
+            
+
+            
         
         }
         public override void OnRemoveCard()
@@ -89,6 +89,14 @@ namespace TTGC.Cards
             card.gameObject.AddComponent<ExtraName>();
         }
 
+        private IEnumerator AddCardsWhenReady(Player minion, Player spawner)
+        {
+            // wait until the player is added to the list of players, then add requisite cards
+            yield return new WaitUntil(() => PlayerManager.instance.players.Contains(minion));
+            yield return new WaitForSecondsRealtime(0.5f);
+            ModdingUtils.Utils.Cards.instance.AddCardsToPlayer(minion, GetCards(spawner).ToArray(), CardsAreReassigned(spawner), addToCardBar: false);
+
+        }
         private static IEnumerator SpawnWhenReady(Player minionToSpawn, Vector3 position)
         {
             yield return new WaitUntil(() => MinionCardBase.readyToSpawn);
