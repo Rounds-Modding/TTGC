@@ -18,29 +18,33 @@ using ModdingUtils;
 
 namespace TTGC.Cards
 {
-    public class ColdNinjaCard : MinionCardBase
+    public class DoppelgangerNinjaCard : MinionCardBase
     {
         public override Color GetBandanaColor(Player player)
         {
-            return new Color(66f / 255f, 209f / 255f, 245f / 255f, 1f);
+            return new Color(1f,0f,0f,1f);
         }
-        public override AIPlayer.AIAggression? GetAIAggression(Player player)
+        public override AIPlayer.AISkill? GetAISkill(Player player)
         {
-            return AIPlayer.AIAggression.Peaceful;
+            return AIPlayer.AISkill.Expert;
         }
         public override List<CardInfo> GetCards(Player player)
         {
-            List<CardInfo> cards = new List<CardInfo>() { };
+            Player[] enemyPlayers = PlayerManager.instance.players.Where(p => p.teamID != player.teamID).ToArray();
 
-            foreach (CardInfo card in Cards.allCards)
+            if (enemyPlayers.Length == 0)
             {
-                if (card.cardName.ToLower() == "lifestealer" || card.cardName.ToLower() == "chilling presence" || card.cardName.ToLower() == "chase")
-                {
-                    cards.Add(card);
-                }
+                return null;
             }
-
-            return cards;
+            else
+            {
+                Player enemy = enemyPlayers[UnityEngine.Random.Range(0, enemyPlayers.Length)];
+                return enemy.data.currentCards;
+            }
+        }
+        public override bool CardsAreReassigned(Player player)
+        {
+            return true;
         }
 
         protected override GameObject GetCardArt()
@@ -55,7 +59,7 @@ namespace TTGC.Cards
 
         protected override CardInfo.Rarity GetRarity()
         {
-            return CardInfo.Rarity.Common;
+            return CardInfo.Rarity.Rare;
         }
 
         protected override CardInfoStat[] GetStats()
@@ -65,12 +69,12 @@ namespace TTGC.Cards
 
         protected override CardThemeColor.CardThemeColorType GetTheme()
         {
-            return CardThemeColor.CardThemeColorType.ColdBlue;
+            return CardThemeColor.CardThemeColorType.DestructiveRed;
         }
 
         protected override string GetTitle()
         {
-            return "Cold Ninja";
+            return "Doppelganger Ninja";
         }
     }
 }

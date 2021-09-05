@@ -42,6 +42,10 @@ namespace TTGC.Cards
         { return null; }
         public virtual AIPlayer.AI? GetAI(Player player)
         { return null; }
+        public virtual Color GetBandanaColor(Player player)
+        {
+            return new Color(0.3679f, 0.2169f, 0.2169f, 1f);
+        }
         public override void SetupCard(CardInfo cardInfo, Gun gun, ApplyCardStats cardStats, CharacterStatModifiers statModifiers)
         {
 
@@ -63,6 +67,11 @@ namespace TTGC.Cards
                 Unbound.Instance.ExecuteAfterSeconds(0.5f, () =>
                 {
                     ModdingUtils.Utils.Cards.instance.AddCardsToPlayer(minion, GetCards(player).ToArray(), CardsAreReassigned(player), addToCardBar: false);
+
+                    minion.data.view.RPC("RPCA_SetFace", RpcTarget.All, new object[] {63, new Vector2(0f, -0.5f), 19, new Vector2(0f,-0.5f), 14, new Vector2(0f,1.1f), 0, new Vector2(0f,0f) });
+
+                    minion.gameObject.GetComponentsInChildren<SpriteRenderer>().Where(renderer => renderer.gameObject.name.Contains("P_A_X6")).First().color = GetBandanaColor(player);
+
                 });
             }
         

@@ -18,8 +18,12 @@ using ModdingUtils;
 
 namespace TTGC.Cards
 {
-    public class DopplegangerNinjaCard : MinionCardBase
+    public class MirrorNinjaCard : MinionCardBase
     {
+        public override Color GetBandanaColor(Player player)
+        {
+            return new Color(0f,1f,0f, 1f);
+        }
         public override AIPlayer.AISkill? GetAISkill(Player player)
         {
             return AIPlayer.AISkill.Expert;
@@ -55,12 +59,12 @@ namespace TTGC.Cards
 
         protected override CardThemeColor.CardThemeColorType GetTheme()
         {
-            return CardThemeColor.CardThemeColorType.DestructiveRed;
+            return CardThemeColor.CardThemeColorType.DefensiveBlue;
         }
 
         protected override string GetTitle()
         {
-            return "Friendly Doppleganger Ninja";
+            return "Mirror Ninja";
         }
     }
 }

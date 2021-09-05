@@ -32,18 +32,19 @@ namespace TTGC
         private void Start()
         {
             // register credits with unbound
-            Unbound.RegisterCredits(ModName, new string[] { "TimeToGrind", "Pykess" }, "","");
+            Unbound.RegisterCredits(ModName, new string[] { "TimeToGrind", "Pykess" }, new string[] { "github", "commission your own mod from pykess" },new string[] { "https://github.com/Rounds-Modding/TTGC", "https://www.buymeacoffee.com/Pykess" });
 
-            //PCE.ArtAssets = AssetUtils.LoadAssetBundleFromResources("pceassetbundle", typeof(PCE).Assembly);
-            //if (PCE.ArtAssets == null)
-            //{
-            //    UnityEngine.Debug.Log("Failed to load PCE art asset bundle");
-            //}
+            TTGC.ArtAssets_Pykess = AssetUtils.LoadAssetBundleFromResources("ttgcpykessassetbundle", typeof(TTGC).Assembly);
+            if (TTGC.ArtAssets_Pykess == null)
+            {
+                UnityEngine.Debug.Log("Failed to load TTGC art asset bundle for Pykess-made cards");
+            }
 
             // build all cards
 
             CustomCard.BuildCard<ColdNinjaCard>(ColdNinjaCard.callback);
-            CustomCard.BuildCard<DopplegangerNinjaCard>(DopplegangerNinjaCard.callback);
+            CustomCard.BuildCard<MirrorNinjaCard>(MirrorNinjaCard.callback);
+            CustomCard.BuildCard<DoppelgangerNinjaCard>(DoppelgangerNinjaCard.callback);
 
             GameModeManager.AddHook(GameModeHooks.HookBattleStart, MinionCardBase.CreateAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPointEnd, MinionCardBase.RemoveAllAIs);
@@ -54,6 +55,6 @@ namespace TTGC
         private const string ModId = "ttg.rounds.plugins.ttgcards";
 
         private const string ModName = "Time To Grind Cards";
-        //internal static AssetBundle ArtAssets;
+        internal static AssetBundle ArtAssets_Pykess;
     }
 }

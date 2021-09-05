@@ -1,0 +1,98 @@
+ManifestFileVersion: 0
+CRC: 3919738846
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: d28266c69da2192e1dff6f6326146e49
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 285a346ff2dbc7815734208a3f1b7e3f
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 74
+  Script: {instanceID: 0}
+- Class: 91
+  Script: {instanceID: 0}
+- Class: 95
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: -765806418, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 55d011acaec8c9fbbcc2d1a14a0dd65a, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+- Class: 222
+  Script: {instanceID: 0}
+- Class: 224
+  Script: {instanceID: 0}
+Assets:
+- Assets/Prefabs/BulletBase6.controller
+- Assets/Prefabs/Bullets.controller
+- Assets/Prefabs/BulletBase2.controller
+- Assets/Prefabs/Bullet_Rifle1.png
+- Assets/Prefabs/FG.anim
+- Assets/Prefabs/BulletPanels 2.controller
+- Assets/Prefabs/AnimationClip/Anim_BgDots1.anim
+- Assets/Prefabs/Images/BG 2.controller
+- Assets/Prefabs/C_QuickReload.prefab
+- Assets/Prefabs/BulletBase5.controller
+- Assets/Prefabs/Images/bullet.png
+- Assets/Prefabs/Bullet1REV.anim
+- Assets/Prefabs/AnimationClip/BG.controller
+- Assets/Prefabs/Images/bullet.anim
+- Assets/Prefabs/BG.anim
+- Assets/Prefabs/BG.controller
+- Assets/Prefabs/Bullet2.png
+- 'Assets/Prefabs/Images/Bullet_Rifles1 #98236.png'
+- Assets/Prefabs/Bullet.controller
+- Assets/Prefabs/FG.controller
+- Assets/Prefabs/AnimatorController/BG_Dots.controller
+- Assets/Prefabs/BulletBase1 (1).controller
+- Assets/Prefabs/Bullet3.anim
+- Assets/Prefabs/BulletBase3.controller
+- Assets/Prefabs/Images/BG 1.controller
+- Assets/Prefabs/BulletBase2 (1).controller
+- Assets/Prefabs/BulletPanels.controller
+- Assets/Prefabs/AnimationClip/BG 1.controller
+- Assets/Prefabs/AnimationClip/Anim_Circle1.anim
+- Assets/Prefabs/Falling.anim
+- Assets/Prefabs/Bullet3REV.anim
+- Assets/Prefabs/BulletRifling.png
+- Assets/Prefabs/AnimatorController/Art_Body.controller
+- Assets/Prefabs/AnimationClip/Gun.controller
+- Assets/Prefabs/AnimationClip/Anim_Bg1.anim
+- Assets/Prefabs/BulletBase1REV.controller
+- 'Assets/Prefabs/Images/Bullet_1 #98397.png'
+- Assets/Prefabs/Bullet2REV.anim
+- Assets/Prefabs/Images/Bullet_Rifle1.png
+- Assets/Prefabs/BulletPanels 1.controller
+- Assets/Prefabs/Images/Bullet_Rifles1.png
+- Assets/Prefabs/Images/Image.controller
+- Assets/Prefabs/C_ExtraAmmo.prefab
+- Assets/Prefabs/Bullet2.anim
+- Assets/Prefabs/BulletBase1.controller
+- Assets/Prefabs/Bullet1.anim
+- Assets/Prefabs/BulletBase3REV.controller
+- Assets/Prefabs/AnimationClip/Ghost.controller
+- Assets/Prefabs/BulletBase2REV.controller
+- Assets/Prefabs/Images/Bullet_1.png
+- Assets/Prefabs/BulletBase4.controller
+- Assets/Prefabs/Images/test.anim
+- 'Assets/Prefabs/Images/Bullet_1 #98289.png'
+- Assets/Prefabs/Images/bullet.controller
+- Assets/Prefabs/BulletBase3REV 1.controller
+- Assets/Prefabs/Bullet1.png
+- Assets/Prefabs/AnimatorController/BG (2) 1.controller
+- 'Assets/Prefabs/Images/Bullet_Rifle1 #98208.png'
+- Assets/Prefabs/Images/DotsDetail_2.png
+- Assets/Prefabs/Images/Bg_Pattern2.png
+- Assets/Prefabs/Images/BG.controller
+Dependencies: []
