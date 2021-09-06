@@ -46,6 +46,7 @@ namespace TTGC
             CustomCard.BuildCard<MirrorNinjaCard>(MirrorNinjaCard.callback);
             CustomCard.BuildCard<DoppelgangerNinjaCard>(DoppelgangerNinjaCard.callback);
 
+            GameModeManager.AddHook(GameModeHooks.HookInitEnd, MinionCardBase.InitPlayerAssigner);
             GameModeManager.AddHook(GameModeHooks.HookBattleStart, MinionCardBase.CreateAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPointEnd, MinionCardBase.RemoveAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPickStart, MinionCardBase.RemoveAllAIs);

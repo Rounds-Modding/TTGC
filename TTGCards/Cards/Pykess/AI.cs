@@ -43,6 +43,20 @@ namespace TTGC.Cards
             }
             set { }
         }
+        private static int NextAvailablePlayerID
+        {
+            get
+            {
+                int ID = 0;
+                ID += PlayerManager.instance.players.Count;
+                foreach (Player player in PlayerManager.instance.players)
+                {
+                    ID += player.data.GetAdditionalData().minions.Count;
+                }
+                return ID;
+            }
+            set { }
+        }
         [RequireComponent(typeof(Player))]
         private class RestoreAIControllerOnDeath : MonoBehaviour
         {
@@ -189,15 +203,17 @@ namespace TTGC.Cards
             }
             internal void Disable()
             {
+
                 if (this.player == null) { return; }
-                PlayerManager.instance.players.Remove(this.player);
-                PlayerAssigner.instance.players.Remove(this.player.data);
+                //PlayerManager.instance.players.Remove(this.player);
+                //PlayerAssigner.instance.players.Remove(this.player.data);
                 this.player.data.isPlaying = false;
                 Traverse.Create(this.player.data.playerVel).Field("simulated").SetValue(false);
 
+                
                 Unbound.Instance.ExecuteAfterSeconds(1f, () =>
                 {
-                    this.player.GetComponent<Holding>().holdable.GetComponent<Gun>().gameObject.SetActive(false);
+                    //this.player.GetComponent<Holding>().holdable.GetComponent<Gun>().gameObject.SetActive(false);
                     this.gameObject.transform.parent.gameObject.SetActive(false);
                     this.player.data.gameObject.transform.position = Vector3.up * 200f;
                 });
@@ -205,9 +221,9 @@ namespace TTGC.Cards
             internal void Enable(Vector3? pos = null)
             {
                 Vector3 Pos = pos ?? Vector3.zero;
-                PlayerManager.instance.players.Add(this.player);
-                PlayerAssigner.instance.players.Add(this.player.data);
-                this.player.GetComponent<Holding>().holdable.GetComponent<Gun>().gameObject.SetActive(true);
+                //PlayerManager.instance.players.Add(this.player);
+                //PlayerAssigner.instance.players.Add(this.player.data);
+                //this.player.GetComponent<Holding>().holdable.GetComponent<Gun>().gameObject.SetActive(true);
                 this.gameObject.transform.parent.gameObject.SetActive(true);
                 this.player.data.isPlaying = true;
                 this.player.data.gameObject.transform.position = Pos;
@@ -426,12 +442,6 @@ namespace TTGC.Cards
 
             System.Type AIController = ChooseAIController(skill, aggression, AItype);
 
-
-            if (PlayerManager.instance.players.Count >= PlayerAssigner.instance.maxPlayers)
-            {
-                PlayerAssigner.instance.maxPlayers++;
-            }
-
             if (activeNow)
             {
                 SoundPlayerStatic.Instance.PlayPlayerAdded();
@@ -450,12 +460,13 @@ namespace TTGC.Cards
             AIdata.GetComponent<CharacterData>().SetAI(null);
             UnityEngine.Object.Instantiate<GameObject>(AIBase, AIdata.transform.position, AIdata.transform.rotation, AIdata.transform).AddComponent(AIController);
 
-            AIdata.player.AssignPlayerID(PlayerManager.instance.players.Count);
+
+            AIdata.player.AssignPlayerID(PlayerAssigner.instance.players.Count);
+            PlayerAssigner.instance.players.Add(AIdata);
             AIdata.player.AssignTeamID(teamID);
 
             if (activeNow)
             {
-                PlayerAssigner.instance.players.Add(AIdata);
                 PlayerManager.instance.players.Add(AIdata.player);
                 if ((bool)Traverse.Create(PlayerManager.instance).Field("playersShouldBeActive").GetValue()) { AIdata.isPlaying = true; }
             }

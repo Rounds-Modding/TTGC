@@ -59,7 +59,8 @@ namespace TTGC.Cards
             }
 
             // add AI player
-            Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
+            //Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
+            Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, player.data.view.ControllerActorNr, null,null, typeof(CustomAI), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
 
             Unbound.Instance.StartCoroutine(AddCardsWhenReady(minion, player));
 
@@ -97,14 +98,54 @@ namespace TTGC.Cards
             ModdingUtils.Utils.Cards.instance.AddCardsToPlayer(minion, GetCards(spawner).ToArray(), CardsAreReassigned(spawner), addToCardBar: false);
 
         }
+        private static Player GetPlayerOrAIWithID(Player[] players, int ID)
+        {
+            return players.Where(player => player.playerID == ID).First();
+        }
+        private static IEnumerator AddAIsToPlayerManager()
+        {
+            List<Player> playersAndAI = PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI).ToList();
+            foreach (Player player in PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI))
+            {
+                playersAndAI.AddRange(player.data.GetAdditionalData().minions);
+            }
+            playersAndAI = playersAndAI.Distinct().ToList();
+
+            int totPlayers = 0;
+            foreach (Player player in PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI))
+            {
+                totPlayers += 1 + player.data.GetAdditionalData().minions.Count;
+            }
+            PlayerManager.instance.players = new List<Player>() { };
+            for (int i = 0; i < totPlayers; i++)
+            {
+                PlayerManager.instance.players.Add(GetPlayerOrAIWithID(playersAndAI.ToArray(), i));
+            }
+
+            yield break;
+        }
+        private static IEnumerator RemoveAIsFromPlayerManager()
+        {
+            List<Player> players = PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI).ToList();
+
+            PlayerManager.instance.players = new List<Player>() { };
+            for (int i = 0; i < players.Count; i++)
+            {
+                PlayerManager.instance.players.Add(GetPlayerOrAIWithID(players.ToArray(), i));
+            }
+
+            yield break;
+        }
+        /*
         private static IEnumerator SpawnWhenReady(Player minionToSpawn, Vector3 position)
         {
             yield return new WaitUntil(() => MinionCardBase.readyToSpawn);
             minionToSpawn.GetComponentInChildren<AIPlayer.EnableDisablePlayer>().Enable(position);
             minionToSpawn.GetComponentInChildren<AIPlayer.EnableDisablePlayer>().ReviveAndSpawn(position);
-        }
+        }*/
         private static bool readyToSpawn = false;
         private static float baseOffset = 0.5f;
+        /*
         internal static IEnumerator CreateAllAIs(IGameModeHandler gm)
         {
             readyToSpawn = false;
@@ -121,12 +162,41 @@ namespace TTGC.Cards
             readyToSpawn = true;
             yield return new WaitForSecondsRealtime(0.1f);
             yield break;
+        }*/
+        internal static IEnumerator CreateAllAIs(IGameModeHandler gm)
+        {
+            yield return AddAIsToPlayerManager();
+            yield return new WaitForSecondsRealtime(0.1f);
+
+            List<Player> minionsToSpawn = new List<Player>() { };
+            List<Vector3> positions = new List<Vector3>() { };
+            foreach (Player player in PlayerManager.instance.players.Where(player => player.data.GetAdditionalData().minions.Count > 0))
+            {
+                minionsToSpawn.AddRange(player.data.GetAdditionalData().minions);
+                int minionNum = 0;
+                foreach (Player minion in player.data.GetAdditionalData().minions)
+                {
+                    minionNum++;
+                    positions.Add(player.gameObject.transform.position - minionNum * baseOffset * new Vector3(UnityEngine.Mathf.Sign(player.gameObject.transform.position.x), 0f, 0f));
+                }
+            }
+            yield return new WaitForEndOfFrame();
+            for (int i = 0; i < minionsToSpawn.Count; i++)
+            {
+                minionsToSpawn[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().Enable(positions[i]);
+                minionsToSpawn[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().ReviveAndSpawn(positions[i]);
+                yield return new WaitForEndOfFrame();
+            }
+            yield return new WaitForSecondsRealtime(0.1f);
+            yield break;
         }
+        /*
         private static IEnumerator RemoveWhenReady(Player minionToRemove)
         {
             yield return new WaitUntil(() => MinionCardBase.readyToRemove);
             minionToRemove.GetComponentInChildren<AIPlayer.EnableDisablePlayer>().Disable();
-        }
+        }*/
+        /*
         private static bool readyToRemove = false;
         internal static IEnumerator RemoveAllAIs(IGameModeHandler gm)
         {
@@ -141,8 +211,30 @@ namespace TTGC.Cards
             readyToRemove = true;
             yield return new WaitForSecondsRealtime(0.1f);
             yield break;
+        }*/
+        internal static IEnumerator RemoveAllAIs(IGameModeHandler gm)
+        {
+            List<Player> minionsToRemove = new List<Player>() { };
+            foreach (Player player in PlayerManager.instance.players.Where(player => player.data.GetAdditionalData().minions.Count > 0))
+            {
+                minionsToRemove.AddRange(player.data.GetAdditionalData().minions);
+            }
+            yield return new WaitForEndOfFrame();
+            for (int i = 0; i < minionsToRemove.Count; i++)
+            {
+                minionsToRemove[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().Disable();
+                yield return new WaitForEndOfFrame();
+            }
+            yield return new WaitForSecondsRealtime(0.1f);
+            yield return RemoveAIsFromPlayerManager();
+            yield return new WaitForSecondsRealtime(0.1f);
+            yield break;
         }
-
+        internal static IEnumerator InitPlayerAssigner(IGameModeHandler gm)
+        {
+            PlayerAssigner.instance.maxPlayers = int.MaxValue;
+            yield break;
+        }
 
     }
 
