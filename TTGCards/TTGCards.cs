@@ -21,6 +21,8 @@ using TTGC.Cards;
 namespace TTGC
 {
     [BepInDependency("com.willis.rounds.unbound", BepInDependency.DependencyFlags.HardDependency)] // necessary for most modding stuff here
+    [BepInDependency("pykess.rounds.plugins.moddingutils", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("pykess.rounds.plugins.cardchoicespawnuniquecardpatch", BepInDependency.DependencyFlags.HardDependency)]
     [BepInPlugin(ModId, ModName, "0.0.0.0")]
     [BepInProcess("Rounds.exe")]
     public class TTGC : BaseUnityPlugin
@@ -50,7 +52,8 @@ namespace TTGC
             GameModeManager.AddHook(GameModeHooks.HookBattleStart, MinionCardBase.CreateAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPointEnd, MinionCardBase.RemoveAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPickStart, MinionCardBase.RemoveAllAIs);
-            
+
+
         }
 
         private const string ModId = "ttg.rounds.plugins.ttgcards";

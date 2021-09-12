@@ -116,7 +116,7 @@ namespace TTGC.Cards
                 ResetUpdate();
                 ResetTimer();
             }
-            void OnEnable()
+            internal void OnEnable()
             {
                 this.onlyAI = false;
                 this.suicidal = false;
@@ -124,7 +124,7 @@ namespace TTGC.Cards
                 ResetUpdate();
                 ResetTimer();
             }
-            void OnDisable()
+            internal void OnDisable()
             {
                 this.onlyAI = false;
                 this.suicidal = false;
@@ -153,10 +153,10 @@ namespace TTGC.Cards
                     foreach (Player player in PlayerManager.instance.players.Where(player => player.data.GetAdditionalData().isAI))
                     {
                         player.gameObject.AddComponent<RestoreAIControllerOnDeath>();
-                        Unbound.Instance.ExecuteAfterSeconds(1f, () =>
-                        {
-                            ChangeAIController(player, AIPlayer.ChooseAIController(aggression: AIAggression.Suicidal, AItype: (AI?)null));
-                        });
+                        //Unbound.Instance.ExecuteAfterSeconds(1f, () =>
+                        //{
+                            ChangeAIController(player, AIPlayer.ChooseAIController(aggression: AIAggression.Suicidal, AItype: AI.None));
+                        //});
                     }
                 }
 
@@ -168,14 +168,14 @@ namespace TTGC.Cards
                     foreach (Player AIPlayer in PlayerManager.instance.players.Where(player => player.data.GetAdditionalData().isAI))
                     {
                         
-                        Unbound.Instance.ExecuteAfterSeconds(1f, delegate
-                        {
+                        //Unbound.Instance.ExecuteAfterSeconds(1f, delegate
+                        //{
                             AIPlayer.data.view.RPC("RPCA_Die", RpcTarget.All, new object[]
                             {
                                     new Vector2(0, 1)
                             });
 
-                        });
+                        //});
                     }
                 }
             }
@@ -205,15 +205,15 @@ namespace TTGC.Cards
             {
 
                 if (this.player == null) { return; }
-                //PlayerManager.instance.players.Remove(this.player);
-                //PlayerAssigner.instance.players.Remove(this.player.data);
+
+                this.player.GetComponentInChildren<EndStalemate>().OnDisable();
+
                 this.player.data.isPlaying = false;
                 Traverse.Create(this.player.data.playerVel).Field("simulated").SetValue(false);
 
                 
                 Unbound.Instance.ExecuteAfterSeconds(1f, () =>
                 {
-                    //this.player.GetComponent<Holding>().holdable.GetComponent<Gun>().gameObject.SetActive(false);
                     this.gameObject.transform.parent.gameObject.SetActive(false);
                     this.player.data.gameObject.transform.position = Vector3.up * 200f;
                 });
@@ -221,22 +221,33 @@ namespace TTGC.Cards
             internal void Enable(Vector3? pos = null)
             {
                 Vector3 Pos = pos ?? Vector3.zero;
-                //PlayerManager.instance.players.Add(this.player);
-                //PlayerAssigner.instance.players.Add(this.player.data);
-                //this.player.GetComponent<Holding>().holdable.GetComponent<Gun>().gameObject.SetActive(true);
+
+                this.player.GetComponentInChildren<EndStalemate>().OnEnable();
+
                 this.gameObject.transform.parent.gameObject.SetActive(true);
                 this.player.data.isPlaying = true;
                 this.player.data.gameObject.transform.position = Pos;
+                NetworkingManager.RPC(typeof(EnableDisablePlayer), nameof(RPCA_Teleport), new object[] { Pos, this.player.data.view.ControllerActorNr, this.player.playerID });
                 Traverse.Create(this.player.data.playerVel).Field("simulated").SetValue(true);
             }
             internal void ReviveAndSpawn(Vector3? pos = null)
             {
                 Vector3 Pos = pos ?? Vector3.zero;
 
+                this.player.GetComponentInChildren<EndStalemate>().OnEnable();
+                
                 this.player.data.healthHandler.Revive(true);
                 this.player.GetComponent<GeneralInput>().enabled = true;
                 this.player.data.gameObject.transform.position = Pos;
+                NetworkingManager.RPC(typeof(EnableDisablePlayer), nameof(RPCA_Teleport), new object[] { Pos, this.player.data.view.ControllerActorNr, this.player.playerID });
                 SoundManager.Instance.Play(PlayerManager.instance.soundCharacterSpawn[0], this.player.transform);
+            }
+            [UnboundRPC]
+            private static void RPCA_Teleport(Vector3 pos, int actorID, int playerID)
+            {
+                Player player = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(actorID, playerID);
+                player.GetComponentInParent<PlayerCollision>().IgnoreWallForFrames(2);
+                player.transform.position = pos;
             }
         }
         private class DisableOnDeath : MonoBehaviour
@@ -334,17 +345,17 @@ namespace TTGC.Cards
             // get or add new AIController and enable it
             AI.gameObject.GetOrAddComponent<newAIController>().enabled = true;
         }
-        internal static System.Type ChooseAIController(AISkill? skill = null, AIAggression? aggression = null, System.Type AItype = null)
+        internal static System.Type ChooseAIController(AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, System.Type AItype = null)
         {
             System.Type AIController = typeof(PlayerAI);
 
-            if (skill != null)
+            if (skill != AISkill.None)
             {
-                AIController = GetAIType(ChooseAIController(skill, aggression, (AI?)null));
+                AIController = GetAIType(ChooseAIController(skill, aggression, AI.None));
             }
-            else if (aggression != null)
+            else if (aggression != AIAggression.None)
             {
-                AIController = GetAIType(ChooseAIController(skill, aggression, (AI?)null));
+                AIController = GetAIType(ChooseAIController(skill, aggression, AI.None));
             }
             else if (AItype != null)
             {
@@ -353,11 +364,11 @@ namespace TTGC.Cards
 
             return AIController;
         }
-        internal static AI ChooseAIController(AISkill? skill = null, AIAggression? aggression = null, AI? AItype = null)
+        internal static AI ChooseAIController(AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None)
         {
             AI AIController = AI.Default;
 
-            if (skill != null)
+            if (skill != AISkill.None)
             {
                 switch (skill)
                 {
@@ -390,7 +401,7 @@ namespace TTGC.Cards
                         }
                 }
             }
-            else if (aggression != null)
+            else if (aggression != AIAggression.None)
             {
                 switch (aggression)
                 {
@@ -428,19 +439,33 @@ namespace TTGC.Cards
                         }
                 }
             }
-            else if (AItype != null)
+            else if (AItype != AI.None)
             {
                 AIController = (AI)AItype;
             }
 
             return AIController;
         }
-
-        internal static Player SpawnAI(int spawnerID, int teamID, int actorID, bool activeNow = false, AISkill? skill = null, AIAggression? aggression = null, System.Type AItype = null)
+        internal static int GetNextMinionID()
         {
-            Player spawner = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(actorID, spawnerID);
+            int ID = 0;
 
-            System.Type AIController = ChooseAIController(skill, aggression, AItype);
+            foreach (Player player in PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI))
+            {
+                ID += 1 + player.data.GetAdditionalData().minions.Count;
+            }
+
+            return ID;
+        }
+        internal static Player SpawnAI(int spawnerID, int teamID, int actorID, bool activeNow = false, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None)
+        {
+            UnityEngine.Debug.Log("SPAWNING AI");
+
+            int newID = GetNextMinionID();
+
+            //Player spawner = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(actorID, spawnerID);
+
+            //System.Type AIController = ChooseAIController(skill, aggression, AItype);
 
             if (activeNow)
             {
@@ -450,6 +475,23 @@ namespace TTGC.Cards
             Vector3 position = Vector3.up * 100f;
             CharacterData AIdata = PhotonNetwork.Instantiate(PlayerAssigner.instance.playerPrefab.name, position, Quaternion.identity, 0, null).GetComponent<CharacterData>();
 
+            NetworkingManager.RPC(typeof(AIPlayer), nameof(RPCA_SetupAI), new object[] { newID, AIdata.view.ViewID, actorID, spawnerID, teamID, activeNow, (byte)skill, (byte)aggression, (byte)AItype });
+
+            return AIdata.player;
+
+        }
+        [UnboundRPC]
+        private static void RPCA_SetupAI(int newID, int viewID, int spawnerActorID, int spawnerPlayerID, int teamID, bool activeNow, byte aiskill, byte aiaggression, byte ai)
+        {
+            AISkill skill = (AISkill)aiskill;
+            AIAggression aggression = (AIAggression)aiaggression;
+            AI AItype = (AI)ai;
+
+            Player spawner = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(spawnerActorID, spawnerPlayerID);
+
+            GameObject AIplayer = PhotonView.Find(viewID).gameObject;
+            CharacterData AIdata = AIplayer.GetComponent<CharacterData>();
+
             // mark this player as an AI
             AIdata.GetAdditionalData().isAI = true;
             // add the spawner to the AI's data
@@ -458,12 +500,17 @@ namespace TTGC.Cards
             spawner.data.GetAdditionalData().minions.Add(AIdata.player);
 
             AIdata.GetComponent<CharacterData>().SetAI(null);
-            UnityEngine.Object.Instantiate<GameObject>(AIBase, AIdata.transform.position, AIdata.transform.rotation, AIdata.transform).AddComponent(AIController);
+            System.Type AIController = GetAIType(ChooseAIController(skill, aggression, AItype));
+            Component aicontroller = UnityEngine.Object.Instantiate<GameObject>(AIBase, AIdata.transform.position, AIdata.transform.rotation, AIdata.transform).AddComponent(AIController);
 
+            if (!AIdata.view.IsMine) { UnityEngine.GameObject.Destroy(aicontroller); }
 
-            AIdata.player.AssignPlayerID(PlayerAssigner.instance.players.Count);
+            UnityEngine.Debug.Log("PLAYERID: " + newID);
+            AIdata.player.AssignPlayerID(newID);
             PlayerAssigner.instance.players.Add(AIdata);
             AIdata.player.AssignTeamID(teamID);
+
+            UnityEngine.Debug.Log("ACTIVENOW: " + activeNow.ToString());
 
             if (activeNow)
             {
@@ -476,17 +523,36 @@ namespace TTGC.Cards
                 AIdata.player.data.isPlaying = false;
                 AIdata.player.data.gameObject.transform.position = Vector3.up * 200f;
                 Traverse.Create(AIdata.player.data.playerVel).Field("simulated").SetValue(false);
+                /*
+                Unbound.Instance.ExecuteAfterSeconds(2f, () =>
+                {
+                    UnityEngine.Debug.Log("FINALIZING");
+                    if (!PlayerAssigner.instance.players.Contains(AIdata)) 
+                    {
+                        UnityEngine.Debug.Log("ADD TO PLAYERASSIGNER");
+                        PlayerAssigner.instance.players.Add(AIdata); 
+                    }
+                    if (PlayerManager.instance.players.Contains(AIdata.player)) 
+                    {
+                        UnityEngine.Debug.Log("REMOVE FROM PLAYERMANAGER");
+                        Player[] players = PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI).ToArray();
+                        PlayerManager.instance.players = new List<Player>() { };
+                        for (int i = 0; i < players.Length; i++)
+                        {
+                            PlayerManager.instance.players.Add(MinionCardBase.GetPlayerOrAIWithID(players.ToArray(), i));
+                        }
+                    }
+                });*/
             }
-
-            return AIdata.player;
-
+            UnityEngine.Debug.Log("FINISHED SPAWNING AI");
         }
-        internal static Player SpawnAI(int spawnerID, int teamID, int actorID, bool activeNow = false, AISkill? skill = null, AIAggression? aggression = null, AI? AItype = null)
+        /*
+        internal static Player SpawnAI(int spawnerID, int teamID, int actorID, bool activeNow = false, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None)
         {
             return SpawnAI(spawnerID, teamID, actorID, activeNow, skill, aggression, GetAIType(ChooseAIController(skill, aggression, AItype)));
-        }
+        }*/
 
-        internal static Player CreateAIWithStats(int spawnerID, int teamID, int actorID, AISkill? skill = null, AIAggression? aggression = null, System.Type AItype = null, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, bool activeNow = false)
+        internal static Player CreateAIWithStats(int spawnerID, int teamID, int actorID, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, bool activeNow = false)
         {
             Player minion = SpawnAI(spawnerID, teamID, actorID, activeNow, skill, aggression, AItype);
 
@@ -517,10 +583,11 @@ namespace TTGC.Cards
 
             return minion;
         }
-        internal static Player CreateAIWithStats(int spawnerID, int teamID, int actorID, AISkill? skill = null, AIAggression? aggression = null, AI? AI = null, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, bool activeNow = false)
+        /*
+        internal static Player CreateAIWithStats(int spawnerID, int teamID, int actorID, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AI = AI.None, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, bool activeNow = false)
         {
             return CreateAIWithStats(spawnerID, teamID, actorID, skill, aggression, GetAIType(ChooseAIController(skill, aggression, AI)), maxHealth, blockStats, gunAmmoStats, gunStats, characterStats, gravityStats, activeNow);
-        }
+        }*/
 
         internal static System.Type GetAIType(AI AI)
         {
@@ -554,12 +621,14 @@ namespace TTGC.Cards
 
         public enum AISkill
         {
+            None,
             Beginner,
             Normal,
             Expert
         }
         public enum AIAggression
         {
+            None,
             Peaceful,
             Normal,
             Aggressive,
@@ -567,6 +636,7 @@ namespace TTGC.Cards
         }
         public enum AI
         {
+            None,
             Default,
             David,
             Minion,
@@ -574,6 +644,28 @@ namespace TTGC.Cards
             Philip,
             Wilhelm,
             Zorro
+        }
+    }
+
+    // patch to prevent unwanted registering of AIs online
+    [Serializable]
+    [HarmonyPatch(typeof(CharacterData), "Start")]
+    class CharacterDataPatchStart
+    {
+        private static bool Prefix(CharacterData __instance)
+        {
+            if (__instance.GetAdditionalData().isAI)
+            {
+                // if the player is an AI, do the "normal" setup but do not register the player
+                __instance.SetFieldValue("groundMask", (LayerMask)LayerMask.GetMask(new string[]
+                {
+                    "Default"
+                }));
+
+                return false; // skip the original (BAD IDEA)
+            }    
+
+            return true;
         }
     }
 
