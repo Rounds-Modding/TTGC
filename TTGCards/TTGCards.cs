@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 using UnboundLib.Networking;
 using UnboundLib.Utils;
 using TTGC.Cards;
+using On;
 
 // requires Assembly-CSharp.dll
 // requires MMHOOK-Assembly-CSharp.dll
@@ -47,11 +48,21 @@ namespace TTGC
             CustomCard.BuildCard<ColdNinjaCard>(ColdNinjaCard.callback);
             CustomCard.BuildCard<MirrorNinjaCard>(MirrorNinjaCard.callback);
             CustomCard.BuildCard<DoppelgangerNinjaCard>(DoppelgangerNinjaCard.callback);
+            CustomCard.BuildCard<NinjaSwarmCard>(NinjaSwarmCard.callback);
 
             GameModeManager.AddHook(GameModeHooks.HookInitEnd, MinionCardBase.InitPlayerAssigner);
             GameModeManager.AddHook(GameModeHooks.HookBattleStart, MinionCardBase.CreateAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPointEnd, MinionCardBase.RemoveAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPickStart, MinionCardBase.RemoveAllAIs);
+
+            GameModeManager.AddHook(GameModeHooks.HookGameStart, (gm) => MinionCardBase.SetPlayersCanJoin(false));
+            // reset playersCanJoin
+            On.MainMenuHandler.Awake += (orig, self) =>
+            {
+                MinionCardBase.SetPlayersCanJoin(true);
+
+                orig(self);
+            };
 
 
         }

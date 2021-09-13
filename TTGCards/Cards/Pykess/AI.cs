@@ -57,6 +57,7 @@ namespace TTGC.Cards
             }
             set { }
         }
+        /*
         [RequireComponent(typeof(Player))]
         private class RestoreAIControllerOnDeath : MonoBehaviour
         {
@@ -97,7 +98,7 @@ namespace TTGC.Cards
                         break;
                 }
             }
-        }
+        }*/
         
 
         private class EndStalemate : MonoBehaviour
@@ -109,7 +110,7 @@ namespace TTGC.Cards
             private float startTime;
             private float updateTime;
             private bool onlyAI = false;
-            private bool suicidal = false;
+            //private bool suicidal = false;
             private bool killed = false;
             void Start()
             {
@@ -119,7 +120,7 @@ namespace TTGC.Cards
             internal void OnEnable()
             {
                 this.onlyAI = false;
-                this.suicidal = false;
+                //this.suicidal = false;
                 this.killed = false;
                 ResetUpdate();
                 ResetTimer();
@@ -127,7 +128,7 @@ namespace TTGC.Cards
             internal void OnDisable()
             {
                 this.onlyAI = false;
-                this.suicidal = false;
+                //this.suicidal = false;
                 this.killed = false;
                 ResetUpdate();
                 ResetTimer();
@@ -146,7 +147,7 @@ namespace TTGC.Cards
                     onlyAI = true;
                     ResetTimer();
                 }
-
+                /*
                 if (onlyAI && !suicidal && Time.time >= this.startTime + this.maxTimeToAIChange)
                 {
                     this.suicidal = true;
@@ -158,9 +159,9 @@ namespace TTGC.Cards
                             ChangeAIController(player, AIPlayer.ChooseAIController(aggression: AIAggression.Suicidal, AItype: AI.None));
                         //});
                     }
-                }
+                }*/
 
-                if (!killed && onlyAI && suicidal && Time.time >= this.startTime + this.maxTime)
+                if (!killed && onlyAI && Time.time >= this.startTime + this.maxTime)
                 {
                     ResetTimer();
                     this.killed = true;
@@ -459,13 +460,8 @@ namespace TTGC.Cards
         }
         internal static Player SpawnAI(int spawnerID, int teamID, int actorID, bool activeNow = false, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None)
         {
-            UnityEngine.Debug.Log("SPAWNING AI");
 
             int newID = GetNextMinionID();
-
-            //Player spawner = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(actorID, spawnerID);
-
-            //System.Type AIController = ChooseAIController(skill, aggression, AItype);
 
             if (activeNow)
             {
@@ -483,6 +479,7 @@ namespace TTGC.Cards
         [UnboundRPC]
         private static void RPCA_SetupAI(int newID, int viewID, int spawnerActorID, int spawnerPlayerID, int teamID, bool activeNow, byte aiskill, byte aiaggression, byte ai)
         {
+
             AISkill skill = (AISkill)aiskill;
             AIAggression aggression = (AIAggression)aiaggression;
             AI AItype = (AI)ai;
@@ -503,14 +500,31 @@ namespace TTGC.Cards
             System.Type AIController = GetAIType(ChooseAIController(skill, aggression, AItype));
             Component aicontroller = UnityEngine.Object.Instantiate<GameObject>(AIBase, AIdata.transform.position, AIdata.transform.rotation, AIdata.transform).AddComponent(AIController);
 
-            if (!AIdata.view.IsMine) { UnityEngine.GameObject.Destroy(aicontroller); }
+            if (!AIdata.view.IsMine)
+            {
+                // if another player created this AI, then make sure it's AI controller is removed and remove this player from PlayerManager
+                UnityEngine.GameObject.Destroy(aicontroller);
+                List<Player> playersToRemove = new List<Player>() { };
+                foreach (Player playerToRemove in PlayerManager.instance.players.Where(player => player.playerID == newID && player.data.view.ControllerActorNr == spawnerActorID))
+                {
+                    playersToRemove.Add(playerToRemove);
+                }
+                foreach (Player playerToRemove in playersToRemove)
+                {
+                    PlayerManager.instance.players.Remove(playerToRemove);
+                }
+            }
 
-            UnityEngine.Debug.Log("PLAYERID: " + newID);
             AIdata.player.AssignPlayerID(newID);
             PlayerAssigner.instance.players.Add(AIdata);
             AIdata.player.AssignTeamID(teamID);
 
-            UnityEngine.Debug.Log("ACTIVENOW: " + activeNow.ToString());
+            // set the player skin correctly
+            GameObject AISkinOrig = AIdata.player.GetTeamColors().gameObject;
+            GameObject AISkinSlot = AIdata.player.GetComponentInChildren<PlayerSkin>().gameObject.transform.parent.gameObject;
+            UnityEngine.GameObject.Destroy(AISkinSlot.transform.GetChild(0).gameObject);
+            GameObject AISkin = UnityEngine.GameObject.Instantiate(AISkinOrig, AISkinSlot.transform);
+            AISkin.GetComponent<PlayerSkinParticle>().Init(703124351);
 
             if (activeNow)
             {
@@ -523,34 +537,9 @@ namespace TTGC.Cards
                 AIdata.player.data.isPlaying = false;
                 AIdata.player.data.gameObject.transform.position = Vector3.up * 200f;
                 Traverse.Create(AIdata.player.data.playerVel).Field("simulated").SetValue(false);
-                /*
-                Unbound.Instance.ExecuteAfterSeconds(2f, () =>
-                {
-                    UnityEngine.Debug.Log("FINALIZING");
-                    if (!PlayerAssigner.instance.players.Contains(AIdata)) 
-                    {
-                        UnityEngine.Debug.Log("ADD TO PLAYERASSIGNER");
-                        PlayerAssigner.instance.players.Add(AIdata); 
-                    }
-                    if (PlayerManager.instance.players.Contains(AIdata.player)) 
-                    {
-                        UnityEngine.Debug.Log("REMOVE FROM PLAYERMANAGER");
-                        Player[] players = PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI).ToArray();
-                        PlayerManager.instance.players = new List<Player>() { };
-                        for (int i = 0; i < players.Length; i++)
-                        {
-                            PlayerManager.instance.players.Add(MinionCardBase.GetPlayerOrAIWithID(players.ToArray(), i));
-                        }
-                    }
-                });*/
+                
             }
-            UnityEngine.Debug.Log("FINISHED SPAWNING AI");
         }
-        /*
-        internal static Player SpawnAI(int spawnerID, int teamID, int actorID, bool activeNow = false, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None)
-        {
-            return SpawnAI(spawnerID, teamID, actorID, activeNow, skill, aggression, GetAIType(ChooseAIController(skill, aggression, AItype)));
-        }*/
 
         internal static Player CreateAIWithStats(int spawnerID, int teamID, int actorID, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, bool activeNow = false)
         {
@@ -583,11 +572,6 @@ namespace TTGC.Cards
 
             return minion;
         }
-        /*
-        internal static Player CreateAIWithStats(int spawnerID, int teamID, int actorID, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AI = AI.None, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, bool activeNow = false)
-        {
-            return CreateAIWithStats(spawnerID, teamID, actorID, skill, aggression, GetAIType(ChooseAIController(skill, aggression, AI)), maxHealth, blockStats, gunAmmoStats, gunStats, characterStats, gravityStats, activeNow);
-        }*/
 
         internal static System.Type GetAIType(AI AI)
         {
@@ -646,26 +630,262 @@ namespace TTGC.Cards
             Zorro
         }
     }
+    // patch to fix DealDamageToPlayer.Go
+    [Serializable]
+    [HarmonyPatch(typeof(DealDamageToPlayer), "Go")]
+    class PlayerManagerPatchGetOtherPlayer
+    {
+        private static void Prefix(DealDamageToPlayer __instance)
+        {
+            if ((Player)__instance.GetFieldValue("target") != null)
+            {
+                Player target = (Player)__instance.GetFieldValue("target");
+                if (target.data.dead || !(bool)target.data.playerVel.GetFieldValue("simulated"))
+                {
+                    __instance.SetFieldValue("target", null);
+                }
+            }
+        }
+    }
 
+    // patch to ensure the correct gun is obtained for AIs
+    [Serializable]
+    [HarmonyPatch(typeof(Gun), "DoAttack")]
+    class ProjectileInitPatchDoAttack
+    {
+        private static bool Prefix(Gun __instance, float charge, bool forceAttack = false, float damageM = 1f, float recoilM = 1f, bool useAmmo = true)
+        {
+            float num = 1f * (1f + charge * __instance.chargeRecoilTo) * recoilM;
+            if ((Rigidbody2D)__instance.GetFieldValue("rig"))
+            {
+                ((Rigidbody2D)__instance.GetFieldValue("rig")).AddForce(((Rigidbody2D)__instance.GetFieldValue("rig")).mass * __instance.recoil * Mathf.Clamp((float)typeof(Gun).GetProperty("usedCooldown", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(__instance), 0f, 1f) * -__instance.transform.up, ForceMode2D.Impulse);
+            }
+            __instance.GetFieldValue("holdable");
+            if ((Action)__instance.GetFieldValue("attackAction") != null)
+            {
+                ((Action)__instance.GetFieldValue("attackAction"))();
+            }
+            // use custom FireBurst method to ensure correct gun is used
+            __instance.StartCoroutine(FireBurst(__instance, charge, forceAttack, damageM, recoilM, useAmmo));
+            return false; // always skip original (TERRIBLE IDEA)
+        }
+
+        // custom FireBurst method to support multiple players per photon controller
+        private static IEnumerator FireBurst(Gun __instance, float charge, bool forceAttack = false, float damageM = 1f, float recoilM = 1f, bool useAmmo = true)
+        {
+            int currentNumberOfProjectiles = __instance.lockGunToDefault ? 1 : (__instance.numberOfProjectiles + Mathf.RoundToInt(__instance.chargeNumberOfProjectilesTo * charge));
+            if (!__instance.lockGunToDefault)
+            {
+            }
+            if (__instance.timeBetweenBullets == 0f)
+            {
+                GamefeelManager.GameFeel(__instance.transform.up * __instance.shake);
+                __instance.soundGun.PlayShot(currentNumberOfProjectiles);
+            }
+            int num;
+            for (int ii = 0; ii < Mathf.Clamp(__instance.bursts, 1, 100); ii = num + 1)
+            {
+                for (int i = 0; i < __instance.projectiles.Length; i++)
+                {
+                    for (int j = 0; j < currentNumberOfProjectiles; j++)
+                    {
+                        if ((bool)typeof(Gun).InvokeMember("CheckIsMine",
+        BindingFlags.Instance | BindingFlags.InvokeMethod |
+        BindingFlags.NonPublic, null, __instance, new object[] { }))
+                        {
+                            __instance.SetFieldValue("spawnPos", __instance.transform.position);
+                            if (__instance.player)
+                            {
+                                __instance.player.GetComponent<PlayerAudioModifyers>().SetStacks();
+                                if (__instance.holdable)
+                                {
+                                    __instance.SetFieldValue("spawnPos", __instance.player.transform.position);
+                                }
+                            }
+                            GameObject gameObject = PhotonNetwork.Instantiate(__instance.projectiles[i].objectToSpawn.gameObject.name, (Vector3)__instance.GetFieldValue("spawnPos"), (Quaternion)typeof(Gun).InvokeMember("getShootRotation", BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.NonPublic, null, __instance, new object[] { j, currentNumberOfProjectiles, charge }), 0, null);
+                            float seed = UnityEngine.Random.Range(0f, 1f);
+                            if (__instance.holdable)
+                            {
+                                if (useAmmo)
+                                {
+                                    if (!PhotonNetwork.OfflineMode)
+                                    {
+                                        NetworkingManager.RPC_Others(typeof(ProjectileInitPatchDoAttack), nameof(RPCO_Init), new object[]
+                                        {
+                                            gameObject.GetComponent<PhotonView>().ViewID,
+                                            __instance.holdable.holder.view.OwnerActorNr,
+                                            __instance.holdable.holder.player.playerID,
+                                            currentNumberOfProjectiles,
+                                            damageM,
+                                            seed
+                                        });
+                                    }
+                                    OFFLINE_Init(gameObject.GetComponent<ProjectileInit>(), __instance.holdable.holder.player.data.view.ControllerActorNr, __instance.holdable.holder.player.playerID, currentNumberOfProjectiles, damageM, seed);
+                                }
+                                else
+                                {
+                                    if (!PhotonNetwork.OfflineMode)
+                                    {
+                                        NetworkingManager.RPC_Others(typeof(ProjectileInitPatchDoAttack), nameof(RPCO_Init_noAmmoUse), new object[]
+                                        {
+                                            gameObject.GetComponent<PhotonView>().ViewID,
+                                            __instance.holdable.holder.view.OwnerActorNr,
+                                            __instance.holdable.holder.player.playerID,
+                                            currentNumberOfProjectiles,
+                                            damageM,
+                                            seed
+                                        });
+                                    }
+                                    OFFLINE_Init_noAmmoUse(gameObject.GetComponent<ProjectileInit>(), __instance.holdable.holder.player.data.view.ControllerActorNr, __instance.holdable.holder.player.playerID, currentNumberOfProjectiles, damageM, seed);
+                                }
+                            }
+                            else
+                            {
+                                if (!PhotonNetwork.OfflineMode)
+                                {
+                                    NetworkingManager.RPC_Others(typeof(ProjectileInitPatchDoAttack), nameof(RPCO_Init_SeparateGun), new object[]
+                                    {
+                                            gameObject.GetComponent<PhotonView>().ViewID,
+                                            __instance.holdable.holder.view.OwnerActorNr,
+                                            __instance.holdable.holder.player.playerID,
+                                            (int)__instance.GetFieldValue("gunID"),
+                                            currentNumberOfProjectiles,
+                                            damageM,
+                                            seed
+                                    });
+                                }
+                                OFFLINE_Init_SeparateGun(gameObject.GetComponent<ProjectileInit>(), __instance.holdable.holder.player.data.view.ControllerActorNr, __instance.holdable.holder.player.playerID, (int)__instance.GetFieldValue("gunID"), currentNumberOfProjectiles, damageM, seed);
+
+                            }
+                        }
+                        if (__instance.timeBetweenBullets != 0f)
+                        {
+                            GamefeelManager.GameFeel(__instance.transform.up * __instance.shake);
+                            __instance.soundGun.PlayShot(currentNumberOfProjectiles);
+                        }
+                    }
+                }
+                if (__instance.bursts > 1 && ii + 1 == Mathf.Clamp(__instance.bursts, 1, 100))
+                {
+                    __instance.soundGun.StopAutoPlayTail();
+                }
+                if (__instance.timeBetweenBullets > 0f)
+                {
+                    yield return new WaitForSeconds(__instance.timeBetweenBullets);
+                }
+                num = ii;
+            }
+            yield break;
+        }
+        // custom bullet init methods to support multiple players on a single photon connection
+        [UnboundRPC]
+        private static void RPCO_Init(int viewID, int senderActorID, int playerID, int nrOfProj, float dmgM, float randomSeed)
+        {
+            ProjectileInit __instance = PhotonView.Find(viewID).gameObject.GetComponent<ProjectileInit>();
+            ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).data.weaponHandler.gun.BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, true);
+        }
+        private static void OFFLINE_Init(ProjectileInit __instance, int senderActorID, int playerID, int nrOfProj, float dmgM, float randomSeed)
+        {
+            ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).data.weaponHandler.gun.BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, true);
+        }
+        [UnboundRPC]
+        private static void RPCO_Init_SeparateGun(int viewID, int senderActorID, int playerID, int gunID, int nrOfProj, float dmgM, float randomSeed)
+        {
+            ProjectileInit __instance = PhotonView.Find(viewID).gameObject.GetComponent<ProjectileInit>();
+            ((Gun)typeof(ProjectileInit).InvokeMember("GetChildGunWithID", BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.NonPublic, null, __instance, new object[] { gunID, ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).gameObject })).BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, true);
+        }
+        private static void OFFLINE_Init_SeparateGun(ProjectileInit __instance, int senderActorID, int playerID, int gunID, int nrOfProj, float dmgM, float randomSeed)
+        {
+            ((Gun)typeof(ProjectileInit).InvokeMember("GetChildGunWithID", BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.NonPublic, null, __instance, new object[] { gunID, ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).gameObject })).BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, true);
+        }
+        [UnboundRPC]
+        private static void RPCO_Init_noAmmoUse(int viewID, int senderActorID, int playerID, int nrOfProj, float dmgM, float randomSeed)
+        {
+            ProjectileInit __instance = PhotonView.Find(viewID).gameObject.GetComponent<ProjectileInit>();
+            ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).data.weaponHandler.gun.BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, false);
+        }
+        private static void OFFLINE_Init_noAmmoUse(ProjectileInit __instance, int senderActorID, int playerID, int nrOfProj, float dmgM, float randomSeed)
+        {
+            ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).data.weaponHandler.gun.BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, false);
+        }
+    }
     // patch to prevent unwanted registering of AIs online
+
+    [Serializable]
+    [HarmonyPatch(typeof(Player), "AssignPlayerID")]
+    class PlayerPatchAssignPlayerID
+    {
+        private static bool Prefix(Player __instance, int ID)
+        {
+            __instance.playerID = ID;
+            __instance.SetColors();
+            return MinionCardBase.playersCanJoin;
+        }
+    }
+    // patch to prevent unwanted registering of AIs online
+
+    [Serializable]
+    [HarmonyPatch(typeof(Player), "AssignTeamID")]
+    class PlayerPatchAssignTeamID
+    {
+        private static bool Prefix(Player __instance, int ID)
+        {
+            __instance.teamID = ID;
+            return MinionCardBase.playersCanJoin;
+        }
+    }
+    // patch to prevent unwanted registering of AIs online
+
+    [Serializable]
+    [HarmonyPatch(typeof(Player), "ReadPlayerID")]
+    class PlayerPatchReadPlayerID
+    {
+        private static bool Prefix(Player __instance)
+        {
+            return MinionCardBase.playersCanJoin;
+        }
+    }
+    // patch to prevent unwanted registering of AIs online
+
+    [Serializable]
+    [HarmonyPatch(typeof(Player), "ReadTeamID")]
+    class PlayerPatchReadTeamID
+    {
+        private static bool Prefix(Player __instance)
+        {
+            return MinionCardBase.playersCanJoin;
+        }
+    }
+    // patch to prevent unwanted registering of AIs online
+
     [Serializable]
     [HarmonyPatch(typeof(CharacterData), "Start")]
     class CharacterDataPatchStart
     {
         private static bool Prefix(CharacterData __instance)
         {
-            if (__instance.GetAdditionalData().isAI)
+            __instance.SetFieldValue("groundMask", (LayerMask)LayerMask.GetMask(new string[]
             {
-                // if the player is an AI, do the "normal" setup but do not register the player
-                __instance.SetFieldValue("groundMask", (LayerMask)LayerMask.GetMask(new string[]
-                {
                     "Default"
-                }));
-
-                return false; // skip the original (BAD IDEA)
-            }    
-
-            return true;
+            }));
+            return MinionCardBase.playersCanJoin;
+        }
+    }
+    // patch to prevent unwanted registering of AIs online
+    [Serializable]
+    [HarmonyPatch(typeof(Player), "Start")]
+    class PlayerPatchStart
+    {
+        private static bool Prefix(Player __instance)
+        {
+            if (!__instance.data.view.IsMine)
+            {
+                return MinionCardBase.playersCanJoin;
+            }
+            else
+            {
+                return true;
+            }
         }
     }
 
@@ -674,20 +894,6 @@ namespace TTGC.Cards
     [HarmonyPatch(typeof(PlayerSkinBank), "GetPlayerSkinColors")]
     class PlayerSkinBankPatchGetPlayersSkinColors
     {
-        /*
-        private static bool Prefix(int team, ref PlayerSkin __result)
-        {
-            Player player = (Player)typeof(PlayerManager).InvokeMember("GetPlayerWithID",
-                    BindingFlags.Instance | BindingFlags.InvokeMethod |
-                    BindingFlags.NonPublic, null, PlayerManager.instance, new object[] { team });
-
-            if (player.data.GetAdditionalData().isAI && player.data.GetAdditionalData().spawner != null)
-            {
-                __result = PlayerSkinBank.GetPlayerSkinColors(player.data.GetAdditionalData().spawner.playerID);
-                return false;
-            }
-            return true;
-        }*/
         private static void Prefix(ref int team)
         {
             team = team % 4;
@@ -697,20 +903,7 @@ namespace TTGC.Cards
     [Serializable]
     [HarmonyPatch(typeof(PlayerSkinBank), "GetPlayerSkin")]
     class PlayerSkinBankPatchGetPlayerSkin
-    {/*
-        private static bool Prefix(int team, ref PlayerSkinBank.PlayerSkinInstance __result)
-        {
-            Player player = (Player)typeof(PlayerManager).InvokeMember("GetPlayerWithID",
-                    BindingFlags.Instance | BindingFlags.InvokeMethod |
-                    BindingFlags.NonPublic, null, PlayerManager.instance, new object[] { team });
-
-            if (player.data.GetAdditionalData().isAI && player.data.GetAdditionalData().spawner != null)
-            {
-                __result = ((PlayerSkinBank)typeof(PlayerSkinBank).GetField("Instance", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null)).skins[player.data.GetAdditionalData().spawner.playerID];
-                return false;
-            }
-            return true;
-        }*/
+    {
         private static void Prefix(ref int team)
         {
             team = team % 4;
@@ -727,7 +920,7 @@ namespace TTGC.Cards
 
             if (__instance.data.GetAdditionalData().isAI && __instance.data.GetAdditionalData().spawner != null)
             {
-                __result = PlayerSkinBank.GetPlayerSkinColors(__instance.data.GetAdditionalData().spawner.playerID);
+                __result = __instance.data.GetAdditionalData().spawner.GetTeamColors();
                 return false;
             }
             return true;
@@ -743,7 +936,7 @@ namespace TTGC.Cards
 
             if (__instance.data.GetAdditionalData().isAI && __instance.data.GetAdditionalData().spawner != null)
             {
-                SetTeamColor.TeamColorThis(__instance.gameObject, PlayerSkinBank.GetPlayerSkinColors(__instance.data.GetAdditionalData().spawner.playerID));
+                SetTeamColor.TeamColorThis(__instance.gameObject, __instance.data.GetAdditionalData().spawner.GetTeamColors());
                 return false;
             }
             return true;

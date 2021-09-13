@@ -23,6 +23,9 @@ namespace TTGC.Cards
     public abstract class MinionCardBase : CustomCard
     {
         public static CardCategory category = CustomCardCategories.instance.CardCategory("AIMinion");
+
+        internal static bool playersCanJoin = true;
+
         public virtual ModdingUtils.Extensions.BlockModifier GetBlockStats(Player player)
         { return null; }
         public virtual ModdingUtils.Extensions.GunAmmoStatModifier GetGunAmmoStats(Player player)
@@ -49,6 +52,10 @@ namespace TTGC.Cards
         {
             return new Color(0.3679f, 0.2169f, 0.2169f, 1f);
         }
+        public virtual int GetNumberOfMinions(Player player)
+        {
+            return 1;
+        }
         public override void SetupCard(CardInfo cardInfo, Gun gun, ApplyCardStats cardStats, CharacterStatModifiers statModifiers)
         {
             cardInfo.categories = cardInfo.categories.Concat(new CardCategory[] { MinionCardBase.category }).ToArray();
@@ -66,23 +73,44 @@ namespace TTGC.Cards
                 return;
             }
 
-            // add AI player
-            Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
-            //Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, player.data.view.ControllerActorNr, null,null, typeof(CustomAI), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
-
-            Unbound.Instance.StartCoroutine(AddCardsWhenReady(minion, player));
-
-            Unbound.Instance.ExecuteAfterSeconds(0.5f, () =>
+            for (int i = 0; i < GetNumberOfMinions(player); i++)
             {
-                UnityEngine.Debug.Log("TOTAL PLAYERS IN PLAYERMANAGER: " + PlayerManager.instance.players.Count.ToString());
-                UnityEngine.Debug.Log("TOTAL PLAYERS IN PLAYERASSIGNER: " + PlayerAssigner.instance.players.Count.ToString());
+                Unbound.Instance.ExecuteAfterSeconds(i*0.5f, () =>
+                {
+                    // add AI player
+                    Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
+                    //Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, player.data.view.ControllerActorNr, null,null, typeof(CustomAI), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
 
-                minion.data.view.RPC("RPCA_SetFace", RpcTarget.All, new object[] { 63, new Vector2(0f, -0.5f), 19, new Vector2(0f, -0.5f), 14, new Vector2(0f, 1.1f), 0, new Vector2(0f, 0f) });
+                    // delay the add cards request so that it happens after the pick phase
+                    Unbound.Instance.StartCoroutine(AskHostToAddCardsWhenReady(minion, player));
 
-                minion.gameObject.GetComponentsInChildren<SpriteRenderer>().Where(renderer => renderer.gameObject.name.Contains("P_A_X6")).First().color = GetBandanaColor(player);
+                    Unbound.Instance.ExecuteAfterSeconds(0.5f, () =>
+                    {
+                        NetworkingManager.RPC(typeof(MinionCardBase), nameof(RPCA_SetFace), new object[] { minion.data.view.ViewID, 63, new Vector2(0f, -0.5f), 19, new Vector2(0f, -0.5f), 14, new Vector2(0f, 1.1f), 0, new Vector2(0f, 0f) });
+                    });
+                    Unbound.Instance.ExecuteAfterSeconds(1f, () =>
+                    {
+                        Color bandanaColor = GetBandanaColor(player);
 
-            });
-
+                        NetworkingManager.RPC(typeof(MinionCardBase), nameof(RPCA_SetBandanaColor), new object[] { minion.data.view.ViewID, bandanaColor.r, bandanaColor.g, bandanaColor.b, bandanaColor.a });
+                    });
+                });
+            }
+        }
+        [UnboundRPC]
+        private static void RPCA_SetFace(int viewID, int eyeID, Vector2 eyeOffset, int mouthID, Vector2 mouthOffset, int detailID, Vector2 detailOffset, int detail2ID, Vector2 detail2Offset)
+        {
+            if (PhotonNetwork.IsMasterClient || PhotonNetwork.OfflineMode)
+            {
+                PhotonView playerView = PhotonView.Find(viewID);
+                playerView.RPC("RPCA_SetFace", RpcTarget.All, new object[] { eyeID, eyeOffset, mouthID, mouthOffset, detailID, detailOffset, detail2ID, detail2Offset });
+            }
+        }
+        [UnboundRPC]
+        private static void RPCA_SetBandanaColor(int viewID, float r, float g, float b, float a)
+        {
+            GameObject minion = PhotonView.Find(viewID).gameObject;
+            minion.GetComponentsInChildren<SpriteRenderer>().Where(renderer => renderer.gameObject.name.Contains("P_A_X6")).First().color = new Color(r,g,b,a);
         }
         public override void OnRemoveCard()
         {
@@ -96,19 +124,63 @@ namespace TTGC.Cards
         {
             card.gameObject.AddComponent<ExtraName>();
         }
-
-        private IEnumerator AddCardsWhenReady(Player minion, Player spawner)
+        private IEnumerator AskHostToAddCardsWhenReady(Player minion, Player spawner)
         {
-            if (GetCards(spawner).Where(card => !card.categories.Contains(MinionCardBase.category)).ToArray().Length < 1)
-            {
-                yield break;
-            }
-            // wait until the player is added to the list of players, then add requisite cards
-            yield return new WaitForSecondsRealtime(0.5f);
+            yield return new WaitForSecondsRealtime(0.1f);        
+            // wait until the AI is ready to receive cards
             yield return new WaitUntil(() => PlayerManager.instance.players.Contains(minion) && minion.gameObject.activeSelf && !minion.data.dead);
-            yield return new WaitForSecondsRealtime(0.5f);
-            ModdingUtils.Utils.Cards.instance.AddCardsToPlayer(minion, GetCards(spawner).Where(card => !card.categories.Contains(MinionCardBase.category)).ToArray(), CardsAreReassigned(spawner), addToCardBar: false);
+            yield return new WaitForSecondsRealtime(0.1f);
+            // if there are valid cards, then have the host add them
+            if (GetCards(spawner).Where(card => !card.categories.Contains(MinionCardBase.category)).ToArray().Length >= 1)
+            {
+                List<string> cardNames = new List<string>() { };
+                foreach (CardInfo card in GetCards(spawner).Where(card => !card.categories.Contains(MinionCardBase.category)))
+                {
+                    cardNames.Add(card.cardName);
+                }
 
+                NetworkingManager.RPC(typeof(MinionCardBase), nameof(RPCA_AddCardsToAI), new object[] { minion.data.view.ControllerActorNr, minion.playerID, spawner.data.view.ControllerActorNr, spawner.playerID, cardNames.ToArray() });
+            }
+            yield break;
+        }
+
+        [UnboundRPC]
+        private static void RPCA_AddCardsToAI(int minionActorID, int minionPlayerID, int spawnerActorID, int spawnerPlayerID, string[] cardNames)
+        {
+            if (!PhotonNetwork.OfflineMode && !PhotonNetwork.IsMasterClient)
+            {
+                return;
+            }
+
+            Unbound.Instance.StartCoroutine(HostAddCardsToAIWhenReady(minionActorID, minionPlayerID, spawnerActorID, spawnerPlayerID, cardNames));
+            
+        }
+        private static IEnumerator HostAddCardsToAIWhenReady(int minionActorID, int minionPlayerID, int spawnerActorID, int spawnerPlayerID, string[] cardNames)
+        {
+
+            yield return new WaitForSecondsRealtime(0.1f);
+            // wait until both players exist
+            yield return new WaitUntil(() =>
+            {
+                Player minion = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(minionActorID, minionPlayerID);
+                Player spawner = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(spawnerActorID, spawnerPlayerID);
+
+                return (minion != null && spawner != null);
+            });
+            Player minion = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(minionActorID, minionPlayerID);
+            // wait until the AI is ready to receive cards
+            yield return new WaitUntil(() => PlayerManager.instance.players.Contains(minion) && minion.gameObject.activeSelf && !minion.data.dead);
+            yield return new WaitForSecondsRealtime(0.1f);
+
+            // finally, add the cards to the AI
+            List<CardInfo> cards = new List<CardInfo>() { };
+            foreach (string cardName in cardNames)
+            {
+                cards.Add(ModdingUtils.Utils.Cards.instance.GetCardWithName(cardName));
+            }
+            ModdingUtils.Utils.Cards.instance.AddCardsToPlayer(minion, cards.ToArray(), reassign: true, addToCardBar: false);
+
+            yield break;
         }
         internal static Player GetPlayerOrAIWithID(Player[] players, int ID)
         {
@@ -149,7 +221,7 @@ namespace TTGC.Cards
             yield break;
         }
 
-        private static float baseOffset = 0.5f;
+        private static float baseOffset = 2f;
         
         internal static IEnumerator CreateAllAIs(IGameModeHandler gm)
         {
@@ -206,6 +278,11 @@ namespace TTGC.Cards
         internal static IEnumerator InitPlayerAssigner(IGameModeHandler gm)
         {
             PlayerAssigner.instance.maxPlayers = int.MaxValue;
+            yield break;
+        }
+        internal static IEnumerator SetPlayersCanJoin(bool playersCanJoin)
+        {
+            MinionCardBase.playersCanJoin = playersCanJoin;
             yield break;
         }
 
