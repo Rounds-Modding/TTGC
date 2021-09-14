@@ -19,55 +19,46 @@ using ModdingUtils.Extensions;
 
 namespace TTGC.Cards
 {
-    public class NinjaSwarmCard : MinionCardBase
+    public class ShieldNinjaCard: MinionCardBase
     {
         public override Color GetBandanaColor(Player player)
         {
             return new Color(1f,1f,1f, 1f);
         }
-        public override AIPlayer.AISkill GetAISkill(Player player)
+        public override AIPlayer.AIAggression GetAIAggression(Player player)
         {
-            return AIPlayer.AISkill.Normal;
+            return AIPlayer.AIAggression.Suicidal;
         }
-        public override float? GetMaxHealth(Player player)
+        public override List<CardInfo> GetCards(Player player)
         {
-            return 1f;
+            CardInfo defender = Cards.allCards.Where(card => card.cardName.ToLower() == "defender").First();
+            CardInfo shockwave = Cards.allCards.Where(card => card.cardName.ToLower() == "shockwave").First();
+            CardInfo staticField = Cards.allCards.Where(card => card.cardName.ToLower() == "static field").First();
+
+            return new List<CardInfo>() { defender, defender, defender, defender, shockwave, staticField };
         }
-        public override int GetNumberOfMinions(Player player)
-        {
-            return 10;
-        }
-        
         public override CharacterStatModifiersModifier GetCharacterStats(Player player)
         {
-            CharacterStatModifiersModifier charStats = new CharacterStatModifiersModifier()
+            return new CharacterStatModifiersModifier()
             {
-                movementSpeed_mult = 1.5f
+                movementSpeed_mult = 1f/3f
             };
-
-            return charStats;
-        }
-        public override GunAmmoStatModifier GetGunAmmoStats(Player player)
-        {
-            GunAmmoStatModifier gunAmmoStats = new GunAmmoStatModifier
-            {
-                maxAmmo_add = -2,
-                reloadTimeMultiplier_mult = 1f / 3f
-            };
-            return gunAmmoStats;
         }
         public override GunStatModifier GetGunStats(Player player)
         {
-            GunStatModifier gunStats = new GunStatModifier
+            return new GunStatModifier()
             {
-                damage_mult = 0.1f
+                attackSpeed_mult = float.MaxValue,
+                damage_mult = 0f,
             };
-            return gunStats;
         }
-        
-        public override List<System.Type> GetEffects(Player player)
+        public override GunAmmoStatModifier GetGunAmmoStats(Player player)
         {
-            return new List<System.Type>() { typeof(AntSquishEffect) };
+            return new GunAmmoStatModifier()
+            {
+                reloadTimeMultiplier_mult = float.MaxValue,
+                maxAmmo_mult = 0
+            };
         }
 
         protected override GameObject GetCardArt()
@@ -82,7 +73,7 @@ namespace TTGC.Cards
 
         protected override CardInfo.Rarity GetRarity()
         {
-            return CardInfo.Rarity.Rare;
+            return CardInfo.Rarity.Uncommon;
         }
 
         protected override CardInfoStat[] GetStats()
@@ -92,12 +83,12 @@ namespace TTGC.Cards
 
         protected override CardThemeColor.CardThemeColorType GetTheme()
         {
-            return CardThemeColor.CardThemeColorType.EvilPurple;
+            return CardThemeColor.CardThemeColorType.DefensiveBlue;
         }
 
         protected override string GetTitle()
         {
-            return "Ninja Swarm";
+            return "Shield Ninja";
         }
     }
 }

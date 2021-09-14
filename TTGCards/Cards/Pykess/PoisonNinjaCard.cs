@@ -19,27 +19,19 @@ using ModdingUtils.Extensions;
 
 namespace TTGC.Cards
 {
-    public class ColdNinjaCard : MinionCardBase
+    public class PoisonNinjaCard: MinionCardBase
     {
         public override Color GetBandanaColor(Player player)
         {
-            return new Color(66f / 255f, 209f / 255f, 245f / 255f, 1f);
+            return new Color(0f,1f, 0f, 1f);
         }
-        public override AIPlayer.AI GetAI(Player player)
+        public override AIPlayer.AISkill GetAISkill(Player player)
         {
-            return AIPlayer.AI.Petter;
+            return AIPlayer.AISkill.Normal;
         }
         public override List<CardInfo> GetCards(Player player)
         {
-            List<string> coldCards = new List<string>() { "lifestealer", "chilling presence", "chase" };
-
-            return Cards.allCards.Where(card => coldCards.Contains(card.cardName.ToLower())).ToList();
-        }
-        public override GunAmmoStatModifier GetGunAmmoStats(Player player)
-        {
-            GunAmmoStatModifier gunAmmoStats = new GunAmmoStatModifier();
-            gunAmmoStats.maxAmmo_add = -3;
-            return gunAmmoStats;
+            return Cards.allCards.Where(card => card.cardName.ToLower() == "poison").ToList();
         }
 
         protected override GameObject GetCardArt()
@@ -54,7 +46,7 @@ namespace TTGC.Cards
 
         protected override CardInfo.Rarity GetRarity()
         {
-            return CardInfo.Rarity.Common;
+            return CardInfo.Rarity.Uncommon;
         }
 
         protected override CardInfoStat[] GetStats()
@@ -64,12 +56,12 @@ namespace TTGC.Cards
 
         protected override CardThemeColor.CardThemeColorType GetTheme()
         {
-            return CardThemeColor.CardThemeColorType.ColdBlue;
+            return CardThemeColor.CardThemeColorType.PoisonGreen;
         }
 
         protected override string GetTitle()
         {
-            return "Cold Ninja";
+            return "Poison Ninja";
         }
     }
 }

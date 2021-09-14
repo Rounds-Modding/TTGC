@@ -24,6 +24,8 @@ namespace TTGC
     [BepInDependency("com.willis.rounds.unbound", BepInDependency.DependencyFlags.HardDependency)] // necessary for most modding stuff here
     [BepInDependency("pykess.rounds.plugins.moddingutils", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("pykess.rounds.plugins.cardchoicespawnuniquecardpatch", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("pykess.rounds.plugins.playerjumppatch", BepInDependency.DependencyFlags.HardDependency)] // fixes multiple jumps
+    [BepInDependency("pykess.rounds.plugins.legraycasterspatch", BepInDependency.DependencyFlags.HardDependency)] // fixes physics for small players
     [BepInPlugin(ModId, ModName, "0.0.0.0")]
     [BepInProcess("Rounds.exe")]
     public class TTGC : BaseUnityPlugin
@@ -49,11 +51,15 @@ namespace TTGC
             CustomCard.BuildCard<MirrorNinjaCard>(MirrorNinjaCard.callback);
             CustomCard.BuildCard<DoppelgangerNinjaCard>(DoppelgangerNinjaCard.callback);
             CustomCard.BuildCard<NinjaSwarmCard>(NinjaSwarmCard.callback);
+            CustomCard.BuildCard<ShieldNinjaCard>(ShieldNinjaCard.callback);
+            CustomCard.BuildCard<PoisonNinjaCard>(PoisonNinjaCard.callback);
+            CustomCard.BuildCard<SentryGunCard>(SentryGunCard.callback);
 
             GameModeManager.AddHook(GameModeHooks.HookInitEnd, MinionCardBase.InitPlayerAssigner);
             GameModeManager.AddHook(GameModeHooks.HookBattleStart, MinionCardBase.CreateAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPointEnd, MinionCardBase.RemoveAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPickStart, MinionCardBase.RemoveAllAIs);
+            GameModeManager.AddHook(GameModeHooks.HookPlayerPickEnd, MinionCardBase.WaitForAIs);
 
             GameModeManager.AddHook(GameModeHooks.HookGameStart, (gm) => MinionCardBase.SetPlayersCanJoin(false));
             // reset playersCanJoin

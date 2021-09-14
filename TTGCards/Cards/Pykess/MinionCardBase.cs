@@ -26,6 +26,10 @@ namespace TTGC.Cards
 
         internal static bool playersCanJoin = true;
 
+        internal static bool AIsDoneSpawning = true;
+
+        private const float delayBetweenSpawns = 0.5f;
+
         public virtual ModdingUtils.Extensions.BlockModifier GetBlockStats(Player player)
         { return null; }
         public virtual ModdingUtils.Extensions.GunAmmoStatModifier GetGunAmmoStats(Player player)
@@ -56,55 +60,47 @@ namespace TTGC.Cards
         {
             return 1;
         }
+        public virtual List<System.Type> GetEffects(Player player)
+        { return new List<System.Type>() { }; }
+        private protected List<CardInfo> GetValidCards(Player player)
+        {
+            if (GetCards(player) == null || !GetCards(player).Where(card => !card.categories.Contains(MinionCardBase.category)).Any()) { return new List<CardInfo>() { }; }
+            else { return GetCards(player).Where(card => !card.categories.Contains(MinionCardBase.category)).ToList(); }
+        }
         public override void SetupCard(CardInfo cardInfo, Gun gun, ApplyCardStats cardStats, CharacterStatModifiers statModifiers)
         {
             cardInfo.categories = cardInfo.categories.Concat(new CardCategory[] { MinionCardBase.category }).ToArray();
         }
         public override void OnAddCard(Player player, Gun gun, GunAmmo gunAmmo, CharacterData data, HealthHandler health, Gravity gravity, Block block, CharacterStatModifiers characterStats)
         {
-            if (!this.gameObject.GetOrAddComponent<PhotonView>().IsMine)
-            {
-                return;
-            }
-
             // AIs can't have AIs
             if (player.data.GetAdditionalData().isAI)
             {
                 return;
             }
 
-            for (int i = 0; i < GetNumberOfMinions(player); i++)
-            {
-                Unbound.Instance.ExecuteAfterSeconds(i*0.5f, () =>
-                {
-                    // add AI player
-                    Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
-                    //Player minion = AIPlayer.CreateAIWithStats(player.playerID, player.teamID, player.data.view.ControllerActorNr, null,null, typeof(CustomAI), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), AIPlayer.sandbox);
+            AIsDoneSpawning = false;
 
-                    // delay the add cards request so that it happens after the pick phase
-                    Unbound.Instance.StartCoroutine(AskHostToAddCardsWhenReady(minion, player));
-
-                    Unbound.Instance.ExecuteAfterSeconds(0.5f, () =>
-                    {
-                        NetworkingManager.RPC(typeof(MinionCardBase), nameof(RPCA_SetFace), new object[] { minion.data.view.ViewID, 63, new Vector2(0f, -0.5f), 19, new Vector2(0f, -0.5f), 14, new Vector2(0f, 1.1f), 0, new Vector2(0f, 0f) });
-                    });
-                    Unbound.Instance.ExecuteAfterSeconds(1f, () =>
-                    {
-                        Color bandanaColor = GetBandanaColor(player);
-
-                        NetworkingManager.RPC(typeof(MinionCardBase), nameof(RPCA_SetBandanaColor), new object[] { minion.data.view.ViewID, bandanaColor.r, bandanaColor.g, bandanaColor.b, bandanaColor.a });
-                    });
-                });
-            }
+            Unbound.Instance.StartCoroutine(SpawnAIs(GetNumberOfMinions(player), delayBetweenSpawns, player, gun, gunAmmo, data, health, gravity, block, characterStats));
+            Unbound.Instance.ExecuteAfterSeconds(GetNumberOfMinions(player) * delayBetweenSpawns + 1f, () => { AIsDoneSpawning = true; });
         }
-        [UnboundRPC]
-        private static void RPCA_SetFace(int viewID, int eyeID, Vector2 eyeOffset, int mouthID, Vector2 mouthOffset, int detailID, Vector2 detailOffset, int detail2ID, Vector2 detail2Offset)
+        private IEnumerator SpawnAIs(int N, float delay, Player player, Gun gun, GunAmmo gunAmmo, CharacterData data, HealthHandler health, Gravity gravity, Block block, CharacterStatModifiers characterStats)
         {
-            if (PhotonNetwork.IsMasterClient || PhotonNetwork.OfflineMode)
+            for (int i = 0; i < N; i++)
             {
-                PhotonView playerView = PhotonView.Find(viewID);
-                playerView.RPC("RPCA_SetFace", RpcTarget.All, new object[] { eyeID, eyeOffset, mouthID, mouthOffset, detailID, detailOffset, detail2ID, detail2Offset });
+                AIPlayer.CreateAIWithStats(player.data.view.IsMine, player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), GetEffects(player), GetValidCards(player), CardsAreReassigned(player), 63, new Vector2(0f, -0.5f), 19, new Vector2(0f, -0.5f), 14, new Vector2(0f, 1.1f), 0, new Vector2(0f, 0f), AIPlayer.sandbox, Finalizer: (mID, aID) => SetBandanaColor(mID, aID, GetBandanaColor(player)));
+                yield return new WaitForSecondsRealtime(delay);
             }
+            yield break;
+        }
+
+        private static IEnumerator SetBandanaColor(int minionID, int actorID, Color bandanaColor)
+        {
+            Player minion = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(actorID, minionID);
+            yield return new WaitUntil(() => minion.GetComponentsInChildren<SpriteRenderer>().Where(renderer => renderer.gameObject.name.Contains("P_A_X6")).Any());
+            yield return new WaitForSecondsRealtime(0.5f);
+            NetworkingManager.RPC(typeof(MinionCardBase), nameof(RPCA_SetBandanaColor), new object[] { minion.data.view.ViewID, bandanaColor.r, bandanaColor.g, bandanaColor.b, bandanaColor.a });
+            yield break;
         }
         [UnboundRPC]
         private static void RPCA_SetBandanaColor(int viewID, float r, float g, float b, float a)
@@ -124,64 +120,13 @@ namespace TTGC.Cards
         {
             card.gameObject.AddComponent<ExtraName>();
         }
-        private IEnumerator AskHostToAddCardsWhenReady(Player minion, Player spawner)
+        
+        internal static IEnumerator WaitForAIs(IGameModeHandler gm)
         {
-            yield return new WaitForSecondsRealtime(0.1f);        
-            // wait until the AI is ready to receive cards
-            yield return new WaitUntil(() => PlayerManager.instance.players.Contains(minion) && minion.gameObject.activeSelf && !minion.data.dead);
-            yield return new WaitForSecondsRealtime(0.1f);
-            // if there are valid cards, then have the host add them
-            if (GetCards(spawner).Where(card => !card.categories.Contains(MinionCardBase.category)).ToArray().Length >= 1)
-            {
-                List<string> cardNames = new List<string>() { };
-                foreach (CardInfo card in GetCards(spawner).Where(card => !card.categories.Contains(MinionCardBase.category)))
-                {
-                    cardNames.Add(card.cardName);
-                }
-
-                NetworkingManager.RPC(typeof(MinionCardBase), nameof(RPCA_AddCardsToAI), new object[] { minion.data.view.ControllerActorNr, minion.playerID, spawner.data.view.ControllerActorNr, spawner.playerID, cardNames.ToArray() });
-            }
+            yield return new WaitUntil(() => AIsDoneSpawning);
             yield break;
         }
 
-        [UnboundRPC]
-        private static void RPCA_AddCardsToAI(int minionActorID, int minionPlayerID, int spawnerActorID, int spawnerPlayerID, string[] cardNames)
-        {
-            if (!PhotonNetwork.OfflineMode && !PhotonNetwork.IsMasterClient)
-            {
-                return;
-            }
-
-            Unbound.Instance.StartCoroutine(HostAddCardsToAIWhenReady(minionActorID, minionPlayerID, spawnerActorID, spawnerPlayerID, cardNames));
-            
-        }
-        private static IEnumerator HostAddCardsToAIWhenReady(int minionActorID, int minionPlayerID, int spawnerActorID, int spawnerPlayerID, string[] cardNames)
-        {
-
-            yield return new WaitForSecondsRealtime(0.1f);
-            // wait until both players exist
-            yield return new WaitUntil(() =>
-            {
-                Player minion = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(minionActorID, minionPlayerID);
-                Player spawner = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(spawnerActorID, spawnerPlayerID);
-
-                return (minion != null && spawner != null);
-            });
-            Player minion = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(minionActorID, minionPlayerID);
-            // wait until the AI is ready to receive cards
-            yield return new WaitUntil(() => PlayerManager.instance.players.Contains(minion) && minion.gameObject.activeSelf && !minion.data.dead);
-            yield return new WaitForSecondsRealtime(0.1f);
-
-            // finally, add the cards to the AI
-            List<CardInfo> cards = new List<CardInfo>() { };
-            foreach (string cardName in cardNames)
-            {
-                cards.Add(ModdingUtils.Utils.Cards.instance.GetCardWithName(cardName));
-            }
-            ModdingUtils.Utils.Cards.instance.AddCardsToPlayer(minion, cards.ToArray(), reassign: true, addToCardBar: false);
-
-            yield break;
-        }
         internal static Player GetPlayerOrAIWithID(Player[] players, int ID)
         {
             return players.Where(player => player.playerID == ID).First();
@@ -243,16 +188,23 @@ namespace TTGC.Cards
                 }
             }
             yield return new WaitForEndOfFrame();
+            foreach (Player minion in minionsToSpawn)
+            {
+                minion.data.weaponHandler.gun.sinceAttack = -1f;
+                minion.data.block.sinceBlock = -1f;
+                minion.data.block.counter = -1f;
+            }
+            yield return new WaitForEndOfFrame();
             for (int i = 0; i < minionsToSpawn.Count; i++)
             {
                 try
                 {
-                    minionsToSpawn[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().Enable(positions[i]);
+                    minionsToSpawn[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().EnablePlayer(positions[i]);
                     minionsToSpawn[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().ReviveAndSpawn(positions[i]);
                 }
                 catch
                 { }
-                yield return new WaitForEndOfFrame();
+                //yield return new WaitForEndOfFrame();
             }
             yield return new WaitForSecondsRealtime(0.1f);
             yield break;
@@ -267,7 +219,7 @@ namespace TTGC.Cards
             yield return new WaitForEndOfFrame();
             for (int i = 0; i < minionsToRemove.Count; i++)
             {
-                minionsToRemove[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().Disable();
+                minionsToRemove[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().DisablePlayer();
                 yield return new WaitForEndOfFrame();
             }
             yield return new WaitForSecondsRealtime(0.1f);
