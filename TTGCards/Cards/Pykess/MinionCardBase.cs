@@ -24,8 +24,6 @@ namespace TTGC.Cards
     {
         public static CardCategory category = CustomCardCategories.instance.CardCategory("AIMinion");
 
-        internal static bool playersCanJoin = true;
-
         internal static bool AIsDoneSpawning = true;
 
         private const float delayBetweenSpawns = 0.5f;
@@ -46,12 +44,12 @@ namespace TTGC.Cards
         { return null; }
         public virtual bool CardsAreReassigned(Player player)
         { return false; }
-        public virtual AIPlayer.AISkill GetAISkill(Player player)
-        { return AIPlayer.AISkill.None; }
-        public virtual AIPlayer.AIAggression GetAIAggression(Player player)
-        { return AIPlayer.AIAggression.None; }
-        public virtual AIPlayer.AI GetAI(Player player)
-        { return AIPlayer.AI.None; }
+        public virtual AIPlayerHandler.AISkill GetAISkill(Player player)
+        { return AIPlayerHandler.AISkill.None; }
+        public virtual AIPlayerHandler.AIAggression GetAIAggression(Player player)
+        { return AIPlayerHandler.AIAggression.None; }
+        public virtual AIPlayerHandler.AI GetAI(Player player)
+        { return AIPlayerHandler.AI.None; }
         public virtual Color GetBandanaColor(Player player)
         {
             return new Color(0.3679f, 0.2169f, 0.2169f, 1f);
@@ -88,7 +86,7 @@ namespace TTGC.Cards
         {
             for (int i = 0; i < N; i++)
             {
-                AIPlayer.CreateAIWithStats(player.data.view.IsMine, player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), GetEffects(player), GetValidCards(player), CardsAreReassigned(player), 63, new Vector2(0f, -0.5f), 19, new Vector2(0f, -0.5f), 14, new Vector2(0f, 1.1f), 0, new Vector2(0f, 0f), AIPlayer.sandbox, Finalizer: (mID, aID) => SetBandanaColor(mID, aID, GetBandanaColor(player)));
+                AIPlayerHandler.CreateAIWithStats(player.data.view.IsMine, player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), GetEffects(player), GetValidCards(player), CardsAreReassigned(player), 63, new Vector2(0f, -0.5f), 19, new Vector2(0f, -0.5f), 14, new Vector2(0f, 1.1f), 0, new Vector2(0f, 0f), AIPlayerHandler.sandbox, Finalizer: (mID, aID) => SetBandanaColor(mID, aID, GetBandanaColor(player)));
                 yield return new WaitForSecondsRealtime(delay);
             }
             yield break;
@@ -199,8 +197,8 @@ namespace TTGC.Cards
             {
                 try
                 {
-                    minionsToSpawn[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().EnablePlayer(positions[i]);
-                    minionsToSpawn[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().ReviveAndSpawn(positions[i]);
+                    minionsToSpawn[i].GetComponentInChildren<AIPlayerHandler.EnableDisablePlayer>().EnablePlayer(positions[i]);
+                    minionsToSpawn[i].GetComponentInChildren<AIPlayerHandler.EnableDisablePlayer>().ReviveAndSpawn(positions[i]);
                 }
                 catch
                 { }
@@ -219,7 +217,7 @@ namespace TTGC.Cards
             yield return new WaitForEndOfFrame();
             for (int i = 0; i < minionsToRemove.Count; i++)
             {
-                minionsToRemove[i].GetComponentInChildren<AIPlayer.EnableDisablePlayer>().DisablePlayer();
+                minionsToRemove[i].GetComponentInChildren<AIPlayerHandler.EnableDisablePlayer>().DisablePlayer();
                 yield return new WaitForEndOfFrame();
             }
             yield return new WaitForSecondsRealtime(0.1f);
@@ -234,7 +232,7 @@ namespace TTGC.Cards
         }
         internal static IEnumerator SetPlayersCanJoin(bool playersCanJoin)
         {
-            MinionCardBase.playersCanJoin = playersCanJoin;
+            AIPlayerHandler.playersCanJoin = playersCanJoin;
             yield break;
         }
 

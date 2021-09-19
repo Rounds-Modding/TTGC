@@ -25,9 +25,9 @@ namespace TTGC.Cards
         {
             return new Color(1f,1f,1f, 1f);
         }
-        public override AIPlayer.AIAggression GetAIAggression(Player player)
+        public override AIPlayerHandler.AIAggression GetAIAggression(Player player)
         {
-            return AIPlayer.AIAggression.Suicidal;
+            return AIPlayerHandler.AIAggression.Suicidal;
         }
         public override List<CardInfo> GetCards(Player player)
         {

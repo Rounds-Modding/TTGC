@@ -60,7 +60,7 @@ namespace TTGC
             GameModeManager.AddHook(GameModeHooks.HookPointEnd, MinionCardBase.RemoveAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPickStart, MinionCardBase.RemoveAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPlayerPickEnd, MinionCardBase.WaitForAIs);
-
+            GameModeManager.AddHook(GameModeHooks.HookBattleStart, TimeSinceBattleStart.BattleStart);
             GameModeManager.AddHook(GameModeHooks.HookGameStart, (gm) => MinionCardBase.SetPlayersCanJoin(false));
             // reset playersCanJoin
             On.MainMenuHandler.Awake += (orig, self) =>

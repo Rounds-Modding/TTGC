@@ -19,8 +19,10 @@ using System;
 
 namespace TTGC.Cards
 {
-    public static class AIPlayer
+    public static class AIPlayerHandler
     {
+        internal static bool playersCanJoin = true;
+
         internal static bool sandbox
         {
             get
@@ -91,7 +93,7 @@ namespace TTGC.Cards
             }
             void Update()
             {
-                if (!(Time.time >= this.updateTime + this.updateDelay) || AIPlayer.sandbox)
+                if (!(Time.time >= this.updateTime + this.updateDelay) || AIPlayerHandler.sandbox)
                 {
                     return;
                 }
@@ -156,7 +158,7 @@ namespace TTGC.Cards
             }
             void Start()
             {
-                if (AIPlayer.sandbox) { Destroy(this); }
+                if (AIPlayerHandler.sandbox) { Destroy(this); }
             }
             internal void DisablePlayer()
             {
@@ -409,7 +411,7 @@ namespace TTGC.Cards
             Vector3 position = Vector3.up * 100f;
             CharacterData AIdata = PhotonNetwork.Instantiate(PlayerAssigner.instance.playerPrefab.name, position, Quaternion.identity, 0, null).GetComponent<CharacterData>();
 
-            NetworkingManager.RPC(typeof(AIPlayer), nameof(RPCA_SetupAI), new object[] { newID, AIdata.view.ViewID, actorID, spawnerID, teamID, activeNow, (byte)skill, (byte)aggression, (byte)AItype, maxHealth });
+            NetworkingManager.RPC(typeof(AIPlayerHandler), nameof(RPCA_SetupAI), new object[] { newID, AIdata.view.ViewID, actorID, spawnerID, teamID, activeNow, (byte)skill, (byte)aggression, (byte)AItype, maxHealth });
 
             return AIdata.player;
 
@@ -551,7 +553,7 @@ namespace TTGC.Cards
             Unbound.Instance.ExecuteAfterSeconds(0.5f, () =>
             {
                 Player minion = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(actorID, minionID);
-                NetworkingManager.RPC(typeof(AIPlayer), nameof(RPCA_SetFace), new object[] { minion.data.view.ViewID, eyeID, eyeOffset, mouthID, mouthOffset, detailID, detailOffset, detail2ID, detail2Offset });
+                NetworkingManager.RPC(typeof(AIPlayerHandler), nameof(RPCA_SetFace), new object[] { minion.data.view.ViewID, eyeID, eyeOffset, mouthID, mouthOffset, detailID, detailOffset, detail2ID, detail2Offset });
             });
             yield break;
         }
@@ -575,7 +577,7 @@ namespace TTGC.Cards
 
             // if there are valid cards, then have the host add them
             string[] cardNames = cards.Select(card => card.cardName).ToArray();
-            NetworkingManager.RPC(typeof(AIPlayer), nameof(RPCA_AddCardsToAI), new object[] { minionID, actorID, cardNames, reassign});
+            NetworkingManager.RPC(typeof(AIPlayerHandler), nameof(RPCA_AddCardsToAI), new object[] { minionID, actorID, cardNames, reassign});
             
             yield break;
         }
@@ -700,402 +702,7 @@ namespace TTGC.Cards
             Zorro
         }
     }
-    // patch to prevent all clients from calling RPCA_Die and RPCA_Die_Phoenix
-    [Serializable]
-    [HarmonyPatch(typeof(HealthHandler), "DoDamage")]
-    class HealthHandlerPatchDoDamage
-    {
-        private static bool Prefix(HealthHandler __instance, Vector2 damage, Vector2 position, Color blinkColor, GameObject damagingWeapon = null, Player damagingPlayer = null, bool healthRemoval = false, bool lethal = true, bool ignoreBlock = false)
-        {
-            if (damage == Vector2.zero)
-            {
-                return false;
-            }
-            CharacterData data = (CharacterData)__instance.GetFieldValue("data");
-            if (!data.isPlaying)
-            {
-                return false;
-            }
-            if (data.dead)
-            {
-                return false;
-            }
-            if (data.block.IsBlocking() && !ignoreBlock)
-            {
-                return false;
-            }
-            if (__instance.isRespawning)
-            {
-                return false;
-            }
-            if (damagingPlayer)
-            {
-                damagingPlayer.GetComponent<CharacterStatModifiers>().DealtDamage(damage, damagingPlayer != null && damagingPlayer.transform.root == __instance.transform, data.player);
-            }
-            __instance.StopAllCoroutines();
-            typeof(HealthHandler).InvokeMember("DisplayDamage", BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.NonPublic, null, __instance, new object[] { blinkColor });
-            data.lastSourceOfDamage = damagingPlayer;
-            data.health -= damage.magnitude;
-            ((CharacterStatModifiers)__instance.GetFieldValue("stats")).WasDealtDamage(damage, damagingPlayer != null && damagingPlayer.transform.root == __instance.transform);
-            if (!lethal)
-            {
-                data.health = Mathf.Clamp(data.health, 1f, data.maxHealth);
-            }
-            // ONLY SEND RPC IF THIS PLAYER IS OURS
-            if (data.health < 0f && !data.dead && data.view.IsMine)
-            {
-                if (data.stats.remainingRespawns > 0)
-                {
-                    data.view.RPC("RPCA_Die_Phoenix", RpcTarget.All, new object[]
-                    {
-                        damage
-                    });
-                }
-                else
-                {
-                    data.view.RPC("RPCA_Die", RpcTarget.All, new object[]
-                    {
-                        damage
-                    });
-                }
-            }
-            if ((float)__instance.GetFieldValue("lastDamaged") + 0.15f < Time.time && damagingPlayer != null && damagingPlayer.data.stats.lifeSteal != 0f)
-            {
-                SoundManager.Instance.Play(__instance.soundDamageLifeSteal, __instance.transform);
-            }
-            __instance.SetFieldValue("lastDamaged", Time.time);
-            return false;
-        }
-    }
 
-    // patch to fix DealDamageToPlayer.Go
-    [Serializable]
-    [HarmonyPatch(typeof(DealDamageToPlayer), "Go")]
-    class PlayerManagerPatchGetOtherPlayer
-    {
-        private static void Prefix(DealDamageToPlayer __instance)
-        {
-            if ((Player)__instance.GetFieldValue("target") != null)
-            {
-                Player target = (Player)__instance.GetFieldValue("target");
-                if (target.data.dead || !(bool)target.data.playerVel.GetFieldValue("simulated"))
-                {
-                    __instance.SetFieldValue("target", null);
-                }
-            }
-        }
-    }
-
-    // patch to ensure the correct gun is obtained for AIs
-    [Serializable]
-    [HarmonyPatch(typeof(Gun), "DoAttack")]
-    class ProjectileInitPatchDoAttack
-    {
-        private static bool Prefix(Gun __instance, float charge, bool forceAttack = false, float damageM = 1f, float recoilM = 1f, bool useAmmo = true)
-        {
-            float num = 1f * (1f + charge * __instance.chargeRecoilTo) * recoilM;
-            if ((Rigidbody2D)__instance.GetFieldValue("rig"))
-            {
-                ((Rigidbody2D)__instance.GetFieldValue("rig")).AddForce(((Rigidbody2D)__instance.GetFieldValue("rig")).mass * __instance.recoil * Mathf.Clamp((float)typeof(Gun).GetProperty("usedCooldown", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(__instance), 0f, 1f) * -__instance.transform.up, ForceMode2D.Impulse);
-            }
-            __instance.GetFieldValue("holdable");
-            if ((Action)__instance.GetFieldValue("attackAction") != null)
-            {
-                ((Action)__instance.GetFieldValue("attackAction"))();
-            }
-            // use custom FireBurst method to ensure correct gun is used
-            __instance.StartCoroutine(FireBurst(__instance, charge, forceAttack, damageM, recoilM, useAmmo));
-            return false; // always skip original (TERRIBLE IDEA)
-        }
-
-        // custom FireBurst method to support multiple players per photon controller
-        private static IEnumerator FireBurst(Gun __instance, float charge, bool forceAttack = false, float damageM = 1f, float recoilM = 1f, bool useAmmo = true)
-        {
-            int currentNumberOfProjectiles = __instance.lockGunToDefault ? 1 : (__instance.numberOfProjectiles + Mathf.RoundToInt(__instance.chargeNumberOfProjectilesTo * charge));
-            if (!__instance.lockGunToDefault)
-            {
-            }
-            if (__instance.timeBetweenBullets == 0f)
-            {
-                GamefeelManager.GameFeel(__instance.transform.up * __instance.shake);
-                __instance.soundGun.PlayShot(currentNumberOfProjectiles);
-            }
-            int num;
-            for (int ii = 0; ii < Mathf.Clamp(__instance.bursts, 1, 100); ii = num + 1)
-            {
-                for (int i = 0; i < __instance.projectiles.Length; i++)
-                {
-                    for (int j = 0; j < currentNumberOfProjectiles; j++)
-                    {
-                        if ((bool)typeof(Gun).InvokeMember("CheckIsMine",
-        BindingFlags.Instance | BindingFlags.InvokeMethod |
-        BindingFlags.NonPublic, null, __instance, new object[] { }))
-                        {
-                            __instance.SetFieldValue("spawnPos", __instance.transform.position);
-                            if (__instance.player)
-                            {
-                                __instance.player.GetComponent<PlayerAudioModifyers>().SetStacks();
-                                if (__instance.holdable)
-                                {
-                                    __instance.SetFieldValue("spawnPos", __instance.player.transform.position);
-                                }
-                            }
-                            GameObject gameObject = PhotonNetwork.Instantiate(__instance.projectiles[i].objectToSpawn.gameObject.name, (Vector3)__instance.GetFieldValue("spawnPos"), (Quaternion)typeof(Gun).InvokeMember("getShootRotation", BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.NonPublic, null, __instance, new object[] { j, currentNumberOfProjectiles, charge }), 0, null);
-                            float seed = UnityEngine.Random.Range(0f, 1f);
-                            if (__instance.holdable)
-                            {
-                                if (useAmmo)
-                                {
-                                    if (!PhotonNetwork.OfflineMode)
-                                    {
-                                        NetworkingManager.RPC_Others(typeof(ProjectileInitPatchDoAttack), nameof(RPCO_Init), new object[]
-                                        {
-                                            gameObject.GetComponent<PhotonView>().ViewID,
-                                            __instance.holdable.holder.view.OwnerActorNr,
-                                            __instance.holdable.holder.player.playerID,
-                                            currentNumberOfProjectiles,
-                                            damageM,
-                                            seed
-                                        });
-                                    }
-                                    OFFLINE_Init(gameObject.GetComponent<ProjectileInit>(), __instance.holdable.holder.player.data.view.ControllerActorNr, __instance.holdable.holder.player.playerID, currentNumberOfProjectiles, damageM, seed);
-                                }
-                                else
-                                {
-                                    if (!PhotonNetwork.OfflineMode)
-                                    {
-                                        NetworkingManager.RPC_Others(typeof(ProjectileInitPatchDoAttack), nameof(RPCO_Init_noAmmoUse), new object[]
-                                        {
-                                            gameObject.GetComponent<PhotonView>().ViewID,
-                                            __instance.holdable.holder.view.OwnerActorNr,
-                                            __instance.holdable.holder.player.playerID,
-                                            currentNumberOfProjectiles,
-                                            damageM,
-                                            seed
-                                        });
-                                    }
-                                    OFFLINE_Init_noAmmoUse(gameObject.GetComponent<ProjectileInit>(), __instance.holdable.holder.player.data.view.ControllerActorNr, __instance.holdable.holder.player.playerID, currentNumberOfProjectiles, damageM, seed);
-                                }
-                            }
-                            else
-                            {
-                                if (!PhotonNetwork.OfflineMode)
-                                {
-                                    NetworkingManager.RPC_Others(typeof(ProjectileInitPatchDoAttack), nameof(RPCO_Init_SeparateGun), new object[]
-                                    {
-                                            gameObject.GetComponent<PhotonView>().ViewID,
-                                            __instance.holdable.holder.view.OwnerActorNr,
-                                            __instance.holdable.holder.player.playerID,
-                                            (int)__instance.GetFieldValue("gunID"),
-                                            currentNumberOfProjectiles,
-                                            damageM,
-                                            seed
-                                    });
-                                }
-                                OFFLINE_Init_SeparateGun(gameObject.GetComponent<ProjectileInit>(), __instance.holdable.holder.player.data.view.ControllerActorNr, __instance.holdable.holder.player.playerID, (int)__instance.GetFieldValue("gunID"), currentNumberOfProjectiles, damageM, seed);
-
-                            }
-                        }
-                        if (__instance.timeBetweenBullets != 0f)
-                        {
-                            GamefeelManager.GameFeel(__instance.transform.up * __instance.shake);
-                            __instance.soundGun.PlayShot(currentNumberOfProjectiles);
-                        }
-                    }
-                }
-                if (__instance.bursts > 1 && ii + 1 == Mathf.Clamp(__instance.bursts, 1, 100))
-                {
-                    __instance.soundGun.StopAutoPlayTail();
-                }
-                if (__instance.timeBetweenBullets > 0f)
-                {
-                    yield return new WaitForSeconds(__instance.timeBetweenBullets);
-                }
-                num = ii;
-            }
-            yield break;
-        }
-        // custom bullet init methods to support multiple players on a single photon connection
-        [UnboundRPC]
-        private static void RPCO_Init(int viewID, int senderActorID, int playerID, int nrOfProj, float dmgM, float randomSeed)
-        {
-            ProjectileInit __instance = PhotonView.Find(viewID).gameObject.GetComponent<ProjectileInit>();
-            ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).data.weaponHandler.gun.BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, true);
-        }
-        private static void OFFLINE_Init(ProjectileInit __instance, int senderActorID, int playerID, int nrOfProj, float dmgM, float randomSeed)
-        {
-            ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).data.weaponHandler.gun.BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, true);
-        }
-        [UnboundRPC]
-        private static void RPCO_Init_SeparateGun(int viewID, int senderActorID, int playerID, int gunID, int nrOfProj, float dmgM, float randomSeed)
-        {
-            ProjectileInit __instance = PhotonView.Find(viewID).gameObject.GetComponent<ProjectileInit>();
-            ((Gun)typeof(ProjectileInit).InvokeMember("GetChildGunWithID", BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.NonPublic, null, __instance, new object[] { gunID, ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).gameObject })).BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, true);
-        }
-        private static void OFFLINE_Init_SeparateGun(ProjectileInit __instance, int senderActorID, int playerID, int gunID, int nrOfProj, float dmgM, float randomSeed)
-        {
-            ((Gun)typeof(ProjectileInit).InvokeMember("GetChildGunWithID", BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.NonPublic, null, __instance, new object[] { gunID, ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).gameObject })).BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, true);
-        }
-        [UnboundRPC]
-        private static void RPCO_Init_noAmmoUse(int viewID, int senderActorID, int playerID, int nrOfProj, float dmgM, float randomSeed)
-        {
-            ProjectileInit __instance = PhotonView.Find(viewID).gameObject.GetComponent<ProjectileInit>();
-            ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).data.weaponHandler.gun.BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, false);
-        }
-        private static void OFFLINE_Init_noAmmoUse(ProjectileInit __instance, int senderActorID, int playerID, int nrOfProj, float dmgM, float randomSeed)
-        {
-            ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(senderActorID, playerID).data.weaponHandler.gun.BulletInit(__instance.gameObject, nrOfProj, dmgM, randomSeed, false);
-        }
-    }
-    // patch to prevent unwanted registering of AIs online
-
-    [Serializable]
-    [HarmonyPatch(typeof(Player), "AssignPlayerID")]
-    class PlayerPatchAssignPlayerID
-    {
-        private static bool Prefix(Player __instance, int ID)
-        {
-            __instance.playerID = ID;
-            __instance.SetColors();
-            return MinionCardBase.playersCanJoin;
-        }
-    }
-    // patch to prevent unwanted registering of AIs online
-
-    [Serializable]
-    [HarmonyPatch(typeof(Player), "AssignTeamID")]
-    class PlayerPatchAssignTeamID
-    {
-        private static bool Prefix(Player __instance, int ID)
-        {
-            __instance.teamID = ID;
-            return MinionCardBase.playersCanJoin;
-        }
-    }
-    // patch to prevent unwanted registering of AIs online
-
-    [Serializable]
-    [HarmonyPatch(typeof(Player), "ReadPlayerID")]
-    class PlayerPatchReadPlayerID
-    {
-        private static bool Prefix(Player __instance)
-        {
-            return MinionCardBase.playersCanJoin;
-        }
-    }
-    // patch to prevent unwanted registering of AIs online
-
-    [Serializable]
-    [HarmonyPatch(typeof(Player), "ReadTeamID")]
-    class PlayerPatchReadTeamID
-    {
-        private static bool Prefix(Player __instance)
-        {
-            return MinionCardBase.playersCanJoin;
-        }
-    }
-    // patch to prevent unwanted registering of AIs online
-
-    [Serializable]
-    [HarmonyPatch(typeof(CharacterData), "Start")]
-    class CharacterDataPatchStart
-    {
-        private static bool Prefix(CharacterData __instance)
-        {
-            __instance.SetFieldValue("groundMask", (LayerMask)LayerMask.GetMask(new string[]
-            {
-                    "Default"
-            }));
-            return MinionCardBase.playersCanJoin;
-        }
-    }
-    // patch to prevent unwanted registering of AIs online
-    [Serializable]
-    [HarmonyPatch(typeof(Player), "Start")]
-    class PlayerPatchStart
-    {
-        private static bool Prefix(Player __instance)
-        {
-            if (!__instance.data.view.IsMine)
-            {
-                return MinionCardBase.playersCanJoin;
-            }
-            else
-            {
-                return true;
-            }
-        }
-    }
-
-    // patch to return correct team colors for AI
-    [Serializable]
-    [HarmonyPatch(typeof(PlayerSkinBank), "GetPlayerSkinColors")]
-    class PlayerSkinBankPatchGetPlayersSkinColors
-    {
-        private static void Prefix(ref int team)
-        {
-            team = team % 4;
-        }
-    }
-    // patch to return correct team colors for AI
-    [Serializable]
-    [HarmonyPatch(typeof(PlayerSkinBank), "GetPlayerSkin")]
-    class PlayerSkinBankPatchGetPlayerSkin
-    {
-        private static void Prefix(ref int team)
-        {
-            team = team % 4;
-        }
-    }
-
-    // patch to return correct team colors for AI
-    [Serializable]
-    [HarmonyPatch(typeof(Player), "GetTeamColors")]
-    class PlayerPatchGetTeamColors
-    {
-        private static bool Prefix(Player __instance, ref PlayerSkin __result)
-        {
-
-            if (__instance.data.GetAdditionalData().isAI && __instance.data.GetAdditionalData().spawner != null)
-            {
-                __result = __instance.data.GetAdditionalData().spawner.GetTeamColors();
-                return false;
-            }
-            return true;
-        }
-    }
-    // patch to return correct team colors for AI
-    [Serializable]
-    [HarmonyPatch(typeof(Player), "SetColors")]
-    class PlayerPatchSetColors
-    {
-        private static bool Prefix(Player __instance)
-        {
-
-            if (__instance.data.GetAdditionalData().isAI && __instance.data.GetAdditionalData().spawner != null)
-            {
-                SetTeamColor.TeamColorThis(__instance.gameObject, __instance.data.GetAdditionalData().spawner.GetTeamColors());
-                return false;
-            }
-            return true;
-        }
-    }
-    // patch to return correct team colors for AI
-    [Serializable]
-    [HarmonyPatch(typeof(Holding), "Start")]
-    class HoldingPatchStart
-    {
-        private static bool Prefix(Holding __instance)
-        {
-
-            if (__instance.GetComponent<Player>().data.GetAdditionalData().isAI && __instance.GetComponent<Player>().data.GetAdditionalData().spawner != null)
-            {
-                __instance.holdable.SetTeamColors(PlayerSkinBank.GetPlayerSkinColors(__instance.GetComponent<Player>().data.GetAdditionalData().spawner.playerID), __instance.GetComponent<Player>());
-                return false;
-            }
-            return true;
-        }
-    }
     // patch to "fix" PlayerAIPetter
     [Serializable]
     [HarmonyPatch(typeof(PlayerAIPetter), "Update")]
@@ -1155,45 +762,52 @@ namespace TTGC.Cards
         }
     }
 
-    // patch cardbarhandler to prevent trying to add cards to non-existant AI card bars
-    [Serializable]
-    [HarmonyPatch(typeof(CardBarHandler), "AddCard")]
-    class CardBarHandlerPatchAddCard
+    static class TimeSinceBattleStart
     {
-        private static bool Prefix(CardBarHandler __instance, int teamId)
+        static float startTime = -1f;
+        
+        public static float timeSince
         {
-            if (teamId >= ((CardBar[])Traverse.Create(__instance).Field("cardBars").GetValue()).Length)
-            {
-                return false;
-            }
-            return true;
+            get { return Time.time - startTime; }
+            private set { }
+        }
+
+        public static void ResetTimer()
+        {
+            startTime = Time.time;
+        }
+
+        internal static IEnumerator BattleStart(IGameModeHandler gm)
+        {
+            startTime = Time.time;
+            yield break;
+        }
+
+    }
+
+    // force AI to not shoot/block for first 2.5s of battle start
+    [Serializable]
+    [HarmonyPatch(typeof(PlayerAPI),"Attack")]
+    class PlayerAPIPatchAttack
+    {
+        private static bool Prefix()
+        {
+            if (TimeSinceBattleStart.timeSince <= 2.5f) { return false; }
+            else { return true; }
+        }
+    }
+    [Serializable]
+    [HarmonyPatch(typeof(PlayerAPI), "Block")]
+    class PlayerAPIPatchBlock
+    {
+        private static bool Prefix()
+        {
+            if (TimeSinceBattleStart.timeSince <= 2.5f) { return false; }
+            else { return true; }
         }
     }
 
-    // patch FollowPlayer.LateUpdate to fix lag
-    [Serializable]
-    [HarmonyPatch(typeof(FollowPlayer), "LateUpdate")]
-    class FollowPlayerPatchLateUpdate
-    {
-        private static bool Prefix(FollowPlayer __instance)
-        {
-            Player otherPlayer;
-            if (__instance.target == FollowPlayer.Target.Other)
-            {
-                otherPlayer = PlayerManager.instance.GetOtherPlayer(__instance.GetComponentInParent<Player>());
-            }
-            else
-            {
-                otherPlayer = __instance.GetComponentInParent<Player>();
-            }
-            
-            if (otherPlayer == null)
-            {
-                return false;
-            }
-            return true;
-        }
-    }
+
 
 
 }

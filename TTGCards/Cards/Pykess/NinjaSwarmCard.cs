@@ -25,9 +25,9 @@ namespace TTGC.Cards
         {
             return new Color(1f,1f,1f, 1f);
         }
-        public override AIPlayer.AISkill GetAISkill(Player player)
+        public override AIPlayerHandler.AISkill GetAISkill(Player player)
         {
-            return AIPlayer.AISkill.Normal;
+            return AIPlayerHandler.AISkill.Normal;
         }
         public override float? GetMaxHealth(Player player)
         {
