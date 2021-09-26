@@ -22,6 +22,8 @@ namespace TTGC.Cards
     public static class AIPlayerHandler
     {
         internal static bool playersCanJoin = true;
+        internal const float actionDelay = 2.5f;
+        internal static Coroutine EndStalemateRoutine = null;
 
         internal static bool sandbox
         {
@@ -39,7 +41,7 @@ namespace TTGC.Cards
                 if (_AIBase != null) { return _AIBase; }
                 else
                 {
-                    _AIBase = new GameObject("AI", typeof(EnableDisablePlayer), typeof(EndStalemate));
+                    _AIBase = new GameObject("AI", typeof(EnableDisablePlayer));
                     return _AIBase;
                 }
             }
@@ -59,94 +61,158 @@ namespace TTGC.Cards
             }
             set { }
         }
-
-        private class EndStalemate : MonoBehaviour
+        internal static IEnumerator StartStalemateHandler(IGameModeHandler gm)
         {
-            // if only AI players remain, give them 10 seconds to duke it out, after that switch their AI to suicidal, then give them another 10 seconds before just killing them
-            private readonly float maxTime = 20f;
-            private readonly float updateDelay = 1f;
-            private float startTime;
-            private float updateTime;
-            private bool onlyAI = false;
-            //private bool suicidal = false;
-            private bool killed = false;
-            void Start()
+            if (AIPlayerHandler.EndStalemateRoutine != null)
             {
-                ResetUpdate();
-                ResetTimer();
+                Unbound.Instance.StopCoroutine(AIPlayerHandler.EndStalemateRoutine);
             }
-            internal void OnEnable()
-            {
-                this.onlyAI = false;
-                //this.suicidal = false;
-                this.killed = false;
-                ResetUpdate();
-                ResetTimer();
-            }
-            internal void OnDisable()
-            {
-                this.onlyAI = false;
-                //this.suicidal = false;
-                this.killed = false;
-                ResetUpdate();
-                ResetTimer();
-            }
-            void Update()
-            {
-                if (!(Time.time >= this.updateTime + this.updateDelay) || AIPlayerHandler.sandbox)
-                {
-                    return;
-                }
 
-                ResetUpdate();
+            AIPlayerHandler.EndStalemateRoutine = Unbound.Instance.StartCoroutine(StalemateHandler());
 
-                if (!onlyAI && !PlayerManager.instance.players.Where(player => !player.data.dead && !player.data.GetAdditionalData().isAI).Any())
-                {
-                    onlyAI = true;
-                    ResetTimer();
-                }
-                /*
-                if (onlyAI && !suicidal && Time.time >= this.startTime + this.maxTimeToAIChange)
-                {
-                    this.suicidal = true;
-                    foreach (Player player in PlayerManager.instance.players.Where(player => player.data.GetAdditionalData().isAI))
-                    {
-                        player.gameObject.AddComponent<RestoreAIControllerOnDeath>();
-                        //Unbound.Instance.ExecuteAfterSeconds(1f, () =>
-                        //{
-                            ChangeAIController(player, AIPlayer.ChooseAIController(aggression: AIAggression.Suicidal, AItype: AI.None));
-                        //});
-                    }
-                }*/
-
-                if (!killed && onlyAI && Time.time >= this.startTime + this.maxTime)
-                {
-                    ResetTimer();
-                    this.killed = true;
-                    // kill ALL AI players
-                    foreach (Player AIPlayer in PlayerManager.instance.players.Where(player => player.data.GetAdditionalData().isAI))
-                    {
-                        
-                        //Unbound.Instance.ExecuteAfterSeconds(1f, delegate
-                        //{
-                            AIPlayer.data.view.RPC("RPCA_Die", RpcTarget.All, new object[]
-                            {
-                                    new Vector2(0, 1)
-                            });
-
-                        //});
-                    }
-                }
-            }
-            void ResetTimer()
-            {
-                this.startTime = Time.time;
-            }
-            void ResetUpdate()
-            {
-                this.updateTime = Time.time;
-            }
+            yield break;
         }
+        private static IEnumerator StalemateHandler()
+        {
+            // wait until players have properly spawned in
+            yield return new WaitForSecondsRealtime(2f);
+
+            // wait until there are only AIs alive, wait a few seconds, then kill them
+            while (PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI && PlayerStatus.PlayerAliveAndSimulated(player)).Any())
+            {
+                yield return new WaitForSecondsRealtime(0.1f);
+            }
+            yield return new WaitForSecondsRealtime(10f);
+
+            foreach (Player minion in PlayerManager.instance.players.Where(player => player.data.GetAdditionalData().isAI && PlayerStatus.PlayerAliveAndSimulated(player)).OrderBy(i => UnityEngine.Random.value))
+            {
+                minion.data.view.RPC("RPCA_Die", RpcTarget.All, new object[]
+                {
+                    new Vector2(0, 1)
+                });
+            }
+            yield break;
+        }
+
+        private readonly static float baseOffset = 2f;
+        private readonly static float range = 2f;
+        private readonly static float maxProject = 1000f;
+        private readonly static float groundOffset = 1f;
+        private readonly static float maxDistanceAway = 10f;
+        private readonly static int maxAttempts = 1000;
+        private static LayerMask groundMask = (LayerMask)LayerMask.GetMask(new string[] { "Default" });
+        private static Vector3 WorldToScreenPos(Vector3 pos)
+        {
+            Vector3 screenpos = MainCam.instance.transform.GetComponent<Camera>().WorldToScreenPoint(new Vector3(pos.x, pos.y, 0f));
+
+            screenpos.x /= (float)Screen.width;
+            screenpos.y /= (float)Screen.height;
+
+            return screenpos;
+        }
+        private static Vector3 ScreenToWorldPos(Vector3 pos)
+        {
+            return MainCam.instance.transform.GetComponent<Camera>().ScreenToWorldPoint(new Vector3(pos.x * (float)Screen.width, pos.y * (float)Screen.height, pos.z));
+        }
+        private static Vector2 CastToGround(Vector2 position)
+        {
+            RaycastHit2D raycastHit2D = Physics2D.Raycast(position, Vector2.down, maxProject);
+            if (!raycastHit2D.transform)
+            {
+                return position;
+            }
+            return position + Vector2.down * (raycastHit2D.distance - groundOffset);
+        }
+        private static bool IsValidPosition(Vector2 position)
+        {
+            RaycastHit2D raycastHit2D = Physics2D.Raycast(position, Vector2.down, range);
+            return raycastHit2D.transform && raycastHit2D.distance > 0.1f;
+        }
+        private static Vector2 GetNearbyValidPosition(Vector2 position)
+        {
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                Vector2 offset = maxDistanceAway*UnityEngine.Random.insideUnitCircle;
+                if (IsValidPosition(position+offset))
+                {
+                    return CastToGround(position + offset);
+                }
+            }
+            return RandomValidPosition();
+        }
+        private static Vector2 RandomValidPosition()
+        {
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                Vector2 position = ScreenToWorldPos(new Vector2(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f)));
+                if (IsValidPosition(position)) { return CastToGround(position); }
+            }
+            return Vector2.zero;
+        }
+        internal static Vector2 GetMinionSpawnLocation(Player minion, int minionNum)
+        {
+            switch (minion.data.GetAdditionalData().spawnLocation)
+            {
+                case SpawnLocation.Center:
+                    {
+                        return GetNearbyValidPosition(CastToGround(ScreenToWorldPos(new Vector2(0.5f, 0.5f))));
+                    }
+                case SpawnLocation.Center_High:
+                    {
+                        return GetNearbyValidPosition(CastToGround(ScreenToWorldPos(new Vector2(0.5f, 1f))));
+                    }
+                case SpawnLocation.Center_Low:
+                    {
+                        return GetNearbyValidPosition(CastToGround(ScreenToWorldPos(new Vector2(0.5f, 0.33f))));
+                    }
+                case SpawnLocation.Owner_Random:
+                    {
+                        return GetNearbyValidPosition(minion.data.GetAdditionalData().spawner.transform.position);
+                    }
+                case SpawnLocation.Enemy_Random:
+                    {
+                        Player enemy = PlayerStatus.GetRandomEnemyPlayer(minion);
+                        if (enemy == null)
+                        {
+                            return RandomValidPosition();
+                        }
+                        return GetNearbyValidPosition(enemy.transform.position);
+                    }
+                case SpawnLocation.Random:
+                    {
+                        return RandomValidPosition();
+                    }
+                case SpawnLocation.Owner_Front:
+                    {
+                        return GetNearbyValidPosition(CastToGround(minion.data.GetAdditionalData().spawner.transform.position - minionNum * baseOffset * new Vector3(UnityEngine.Mathf.Sign(minion.data.GetAdditionalData().spawner.transform.position.x), 0f, 0f)));
+                    }
+                case SpawnLocation.Owner_Back:
+                    {
+                        return GetNearbyValidPosition(CastToGround(minion.data.GetAdditionalData().spawner.transform.position + minionNum * baseOffset * new Vector3(UnityEngine.Mathf.Sign(minion.data.GetAdditionalData().spawner.transform.position.x), 0f, 0f)));
+                    }
+                case SpawnLocation.Enemy_Front:
+                    {
+                        Player enemy = PlayerStatus.GetRandomEnemyPlayer(minion);
+                        if (enemy == null)
+                        {
+                            return RandomValidPosition();
+                        }
+                        return GetNearbyValidPosition(CastToGround(enemy.transform.position - minionNum * baseOffset * new Vector3(UnityEngine.Mathf.Sign(enemy.transform.position.x), 0f, 0f)));
+                    }
+                case SpawnLocation.Enemy_Back:
+                    {
+                        Player enemy = PlayerStatus.GetRandomEnemyPlayer(minion);
+                        if (enemy == null)
+                        {
+                            return RandomValidPosition();
+                        }
+                        return GetNearbyValidPosition(CastToGround(enemy.transform.position + minionNum * baseOffset * new Vector3(UnityEngine.Mathf.Sign(enemy.transform.position.x), 0f, 0f)));
+                    }
+            }
+            return RandomValidPosition();
+
+        }
+
         internal class EnableDisablePlayer : MonoBehaviour
         {
             private Player player
@@ -165,8 +231,6 @@ namespace TTGC.Cards
 
                 if (this.player == null) { return; }
 
-                this.player.GetComponentInChildren<EndStalemate>().OnDisable();
-
                 this.player.data.isPlaying = false;
                 Traverse.Create(this.player.data.playerVel).Field("simulated").SetValue(false);
 
@@ -181,7 +245,6 @@ namespace TTGC.Cards
             {
                 Vector3 Pos = pos ?? Vector3.zero;
 
-                this.player.GetComponentInChildren<EndStalemate>().OnEnable();
                 this.player.data.weaponHandler.gun.sinceAttack = -1f;
                 this.player.data.block.sinceBlock = -1f;
                 this.player.data.block.counter = -1f;
@@ -196,7 +259,6 @@ namespace TTGC.Cards
             {
                 Vector3 Pos = pos ?? Vector3.zero;
 
-                this.player.GetComponentInChildren<EndStalemate>().OnEnable();
                 this.player.GetComponent<GeneralInput>().enabled = true;
                 this.player.data.gameObject.transform.position = Pos;
                 NetworkingManager.RPC(typeof(EnableDisablePlayer), nameof(RPCA_Teleport), new object[] { Pos, this.player.data.view.ControllerActorNr, this.player.playerID });
@@ -400,7 +462,7 @@ namespace TTGC.Cards
 
             return ID;
         }
-        internal static Player SpawnAI(int newID, int spawnerID, int teamID, int actorID, bool activeNow = false, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None, float? maxHealth = null)
+        internal static Player SpawnAI(int newID, int spawnerID, int teamID, int actorID, bool activeNow = false, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None, SpawnLocation spawnLocation = SpawnLocation.Owner_Random, float? maxHealth = null)
         {
 
             if (activeNow)
@@ -411,18 +473,19 @@ namespace TTGC.Cards
             Vector3 position = Vector3.up * 100f;
             CharacterData AIdata = PhotonNetwork.Instantiate(PlayerAssigner.instance.playerPrefab.name, position, Quaternion.identity, 0, null).GetComponent<CharacterData>();
 
-            NetworkingManager.RPC(typeof(AIPlayerHandler), nameof(RPCA_SetupAI), new object[] { newID, AIdata.view.ViewID, actorID, spawnerID, teamID, activeNow, (byte)skill, (byte)aggression, (byte)AItype, maxHealth });
+            NetworkingManager.RPC(typeof(AIPlayerHandler), nameof(RPCA_SetupAI), new object[] { newID, AIdata.view.ViewID, actorID, spawnerID, teamID, activeNow, (byte)skill, (byte)aggression, (byte)AItype, (byte)spawnLocation, maxHealth });
 
             return AIdata.player;
 
         }
         [UnboundRPC]
-        private static void RPCA_SetupAI(int newID, int viewID, int spawnerActorID, int spawnerPlayerID, int teamID, bool activeNow, byte aiskill, byte aiaggression, byte ai, float? maxHealth)
+        private static void RPCA_SetupAI(int newID, int viewID, int spawnerActorID, int spawnerPlayerID, int teamID, bool activeNow, byte aiskill, byte aiaggression, byte ai, byte aispawnlocation, float? maxHealth)
         {
 
             AISkill skill = (AISkill)aiskill;
             AIAggression aggression = (AIAggression)aiaggression;
             AI AItype = (AI)ai;
+            SpawnLocation spawnLocation = (SpawnLocation)aispawnlocation;
 
             Player spawner = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(spawnerActorID, spawnerPlayerID);
             GameObject AIplayer = PhotonView.Find(viewID).gameObject;
@@ -431,6 +494,8 @@ namespace TTGC.Cards
             AIdata.GetAdditionalData().isAI = true;
             // add the spawner to the AI's data
             AIdata.GetAdditionalData().spawner = spawner;
+            // set spawn location
+            AIdata.GetAdditionalData().spawnLocation = spawnLocation;
             // add AI to spawner's data
             spawner.data.GetAdditionalData().minions.Add(AIdata.player);
             // set maxHealth
@@ -463,7 +528,7 @@ namespace TTGC.Cards
             PlayerAssigner.instance.players.Add(AIdata);
             AIdata.player.AssignTeamID(teamID);
             
-
+            /*
             Unbound.Instance.StartCoroutine(ExecuteWhenAIIsReady(newID, AIdata.view.ControllerActorNr, (mID, aID) =>
             {
                 Player minion = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(aID, mID);
@@ -476,8 +541,8 @@ namespace TTGC.Cards
                 AISkin.GetComponent<PlayerSkinParticle>().Init(703124351);
 
                 minion.GetComponentInChildren<PlayerSkinHandler>().SetFieldValue("skins", new PlayerSkinParticle[] { AISkin.GetComponent<PlayerSkinParticle>() });
-            }, 1f));
-            
+            }, 5f));
+            */
             if (activeNow)
             {
                 PlayerManager.instance.players.Add(AIdata.player);
@@ -493,13 +558,13 @@ namespace TTGC.Cards
             }
         }
 
-        internal static void CreateAIWithStats(bool IsMine, int spawnerID, int teamID, int actorID, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, List<System.Type> effects = null, List<CardInfo> cards = null, bool cardsAreReassigned = false, int eyeID = 0, Vector2 eyeOffset = default(Vector2), int mouthID = 0, Vector2 mouthOffset = default(Vector2), int detailID = 0, Vector2 detailOffset = default(Vector2), int detail2ID = 0, Vector2 detail2Offset = default(Vector2), bool activeNow = false, Func<int, int, IEnumerator> Finalizer = null, Action<int, int> Callback = null)
+        internal static void CreateAIWithStats(bool IsMine, int spawnerID, int teamID, int actorID, AISkill skill = AISkill.None, AIAggression aggression = AIAggression.None, AI AItype = AI.None, float? maxHealth = null, ModdingUtils.Extensions.BlockModifier blockStats = null, ModdingUtils.Extensions.GunAmmoStatModifier gunAmmoStats = null, ModdingUtils.Extensions.GunStatModifier gunStats = null, ModdingUtils.Extensions.CharacterStatModifiersModifier characterStats = null, ModdingUtils.Extensions.GravityModifier gravityStats = null, List<System.Type> effects = null, List<CardInfo> cards = null, bool cardsAreReassigned = false, SpawnLocation spawnLocation = SpawnLocation.Owner_Random, int eyeID = 0, Vector2 eyeOffset = default(Vector2), int mouthID = 0, Vector2 mouthOffset = default(Vector2), int detailID = 0, Vector2 detailOffset = default(Vector2), int detail2ID = 0, Vector2 detail2Offset = default(Vector2), bool activeNow = false, Func<int, int, IEnumerator> Finalizer = null, Action<int, int> Callback = null)
         {
             int newID = GetNextMinionID();
 
             if (IsMine)
             {
-                Unbound.Instance.StartCoroutine(SpawnAIAfterDelay(0.1f, newID, spawnerID, teamID, actorID, activeNow, skill, aggression, AItype, maxHealth));
+                Unbound.Instance.StartCoroutine(SpawnAIAfterDelay(0.1f, newID, spawnerID, teamID, actorID, activeNow, skill, aggression, AItype, spawnLocation, maxHealth));
                 
 
                 // delay the add cards request so that it happens after the pick phase
@@ -604,10 +669,10 @@ namespace TTGC.Cards
             yield break;
         }
 
-        private static IEnumerator SpawnAIAfterDelay(float delay, int newID, int spawnerID, int teamID, int actorID, bool activeNow, AISkill skill, AIAggression aggression, AI AItype, float? maxHealth)
+        private static IEnumerator SpawnAIAfterDelay(float delay, int newID, int spawnerID, int teamID, int actorID, bool activeNow, AISkill skill, AIAggression aggression, AI AItype, SpawnLocation spawnLocation, float? maxHealth)
         {
             yield return new WaitForSecondsRealtime(delay);
-            Player minion = SpawnAI(newID, spawnerID, teamID, actorID, activeNow, skill, aggression, AItype, maxHealth);
+            Player minion = SpawnAI(newID, spawnerID, teamID, actorID, activeNow, skill, aggression, AItype, spawnLocation, maxHealth);
             yield break;
 
         }
@@ -701,6 +766,21 @@ namespace TTGC.Cards
             Wilhelm,
             Zorro
         }
+
+        public enum SpawnLocation
+        {
+            Center,
+            Center_High,
+            Center_Low,
+            Owner_Random,
+            Enemy_Random,
+            Random,
+            Owner_Front,
+            Owner_Back,
+            Enemy_Front,
+            Enemy_Back
+        }
+
     }
 
     // patch to "fix" PlayerAIPetter
@@ -785,27 +865,34 @@ namespace TTGC.Cards
 
     }
 
-    // force AI to not shoot/block for first 2.5s of battle start
+    // force AI to not shoot/block for first few seconds of battle start
     [Serializable]
-    [HarmonyPatch(typeof(PlayerAPI),"Attack")]
-    class PlayerAPIPatchAttack
+    [HarmonyPatch(typeof(Gun),"Attack")]
+    class GunPatchAttack
     {
-        private static bool Prefix()
+        private static bool Prefix(Gun __instance)
         {
-            if (TimeSinceBattleStart.timeSince <= 2.5f) { return false; }
+            if (__instance.player.data.GetAdditionalData().isAI && TimeSinceBattleStart.timeSince <= AIPlayerHandler.actionDelay) 
+            {
+                return false; 
+            }
             else { return true; }
         }
     }
     [Serializable]
-    [HarmonyPatch(typeof(PlayerAPI), "Block")]
-    class PlayerAPIPatchBlock
+    [HarmonyPatch(typeof(Block), "TryBlock")]
+    class BlockPatchTryBlock
     {
-        private static bool Prefix()
+        private static bool Prefix(Block __instance)
         {
-            if (TimeSinceBattleStart.timeSince <= 2.5f) { return false; }
+            if (((CharacterData)__instance.GetFieldValue("data")).GetAdditionalData().isAI && TimeSinceBattleStart.timeSince <= AIPlayerHandler.actionDelay)
+            {
+                return false; 
+            }
             else { return true; }
         }
     }
+
 
 
 

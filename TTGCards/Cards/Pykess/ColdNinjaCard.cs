@@ -41,6 +41,10 @@ namespace TTGC.Cards
             gunAmmoStats.maxAmmo_add = -3;
             return gunAmmoStats;
         }
+        public override float? GetMaxHealth(Player player)
+        {
+            return 75f;
+        }
 
         protected override GameObject GetCardArt()
         {

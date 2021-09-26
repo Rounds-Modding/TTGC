@@ -7,6 +7,21 @@ using TTGC.Cards;
 
 namespace TTGCards.Cards.Pykess.Patches
 {
+    // patch to prevent game crash
+    [Serializable]
+    [HarmonyPatch(typeof(Player), "GetFaceOffline")]
+    class PlayerPatchGetFaceOffline
+    {
+        private static bool Prefix(Player __instance)
+        {
+
+            if (__instance.playerID >= CharacterCreatorHandler.instance.selectedPlayerFaces.Length)
+            {
+                return false;
+            }
+            return true;
+        }
+    }
     // patch to return correct team colors for AI
     [Serializable]
     [HarmonyPatch(typeof(Player), "SetColors")]

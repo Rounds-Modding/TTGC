@@ -29,6 +29,10 @@ namespace TTGC.Cards
         {
             return AIPlayerHandler.AISkill.Expert;
         }
+        public override AIPlayerHandler.SpawnLocation GetAISpawnLocation(Player player)
+        {
+            return AIPlayerHandler.SpawnLocation.Center;
+        }
         public override List<CardInfo> GetCards(Player player)
         {
             List<string> sentryCards = new List<string>() { "spray", "quick reload" };

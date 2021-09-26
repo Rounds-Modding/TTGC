@@ -33,9 +33,9 @@ namespace TTGC.Cards
         {
             CardInfo defender = Cards.allCards.Where(card => card.cardName.ToLower() == "defender").First();
             CardInfo shockwave = Cards.allCards.Where(card => card.cardName.ToLower() == "shockwave").First();
-            CardInfo staticField = Cards.allCards.Where(card => card.cardName.ToLower() == "static field").First();
+            CardInfo echo = Cards.allCards.Where(card => card.cardName.ToLower() == "echo").First();
 
-            return new List<CardInfo>() { defender, defender, defender, defender, shockwave, staticField };
+            return new List<CardInfo>() { echo, shockwave };
         }
         public override CharacterStatModifiersModifier GetCharacterStats(Player player)
         {
@@ -58,6 +58,13 @@ namespace TTGC.Cards
             {
                 reloadTimeMultiplier_mult = float.MaxValue,
                 maxAmmo_mult = 0
+            };
+        }
+        public override BlockModifier GetBlockStats(Player player)
+        {
+            return new BlockModifier()
+            {
+                cdMultiplier_mult = 0.5f
             };
         }
 

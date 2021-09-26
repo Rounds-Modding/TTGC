@@ -23,7 +23,11 @@ namespace TTGC.Cards
     {
         public override Color GetBandanaColor(Player player)
         {
-            return new Color(1f,1f,1f, 1f);
+            return new Color(1f,0f,1f, 1f);
+        }
+        public override AIPlayerHandler.SpawnLocation GetAISpawnLocation(Player player)
+        {
+            return AIPlayerHandler.SpawnLocation.Random;
         }
         public override AIPlayerHandler.AISkill GetAISkill(Player player)
         {
@@ -60,7 +64,7 @@ namespace TTGC.Cards
         {
             GunStatModifier gunStats = new GunStatModifier
             {
-                damage_mult = 0.1f
+                damage_mult = 0.25f
             };
             return gunStats;
         }

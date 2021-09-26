@@ -2,6 +2,8 @@
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using System.Collections.Generic;
+using UnityEngine;
+using TTGC.Cards;
 
 namespace TTGC.Extensions
 {
@@ -12,12 +14,14 @@ namespace TTGC.Extensions
         public List<Player> minions;
         public bool isAI;
         public Player spawner;
+        public AIPlayerHandler.SpawnLocation spawnLocation;
 
         public CharacterDataAdditionalData()
         {
             minions = new List<Player>() { };
             isAI = false;
             spawner = null;
+            spawnLocation = AIPlayerHandler.SpawnLocation.Owner_Random;
         }
     }
     public static class CharacterDataExtension
@@ -41,13 +45,18 @@ namespace TTGC.Extensions
     }
     // patch Player.FullReset to properly clear extra stats
     [HarmonyPatch(typeof(Player), "FullReset")]
-    class OutOfBoundsHandlerPatchStart
+    class PlayerPatchFullReset_CharacterDataExtension
     {
         private static void Postfix(Player __instance)
         {
+            for (int i = 0; i < __instance.data.GetAdditionalData().minions.Count; i++)
+            {
+                UnityEngine.GameObject.Destroy(__instance.data.GetAdditionalData().minions[i]);
+            }
             __instance.data.GetAdditionalData().minions = new List<Player>() { };
             __instance.data.GetAdditionalData().isAI = false;
             __instance.data.GetAdditionalData().spawner = null;
+            __instance.data.GetAdditionalData().spawnLocation = AIPlayerHandler.SpawnLocation.Owner_Random;
         }
     }
     

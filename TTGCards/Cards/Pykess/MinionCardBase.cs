@@ -44,6 +44,9 @@ namespace TTGC.Cards
         { return null; }
         public virtual bool CardsAreReassigned(Player player)
         { return false; }
+        public virtual AIPlayerHandler.SpawnLocation GetAISpawnLocation(Player player)
+        { return AIPlayerHandler.SpawnLocation.Owner_Random; }
+
         public virtual AIPlayerHandler.AISkill GetAISkill(Player player)
         { return AIPlayerHandler.AISkill.None; }
         public virtual AIPlayerHandler.AIAggression GetAIAggression(Player player)
@@ -62,6 +65,8 @@ namespace TTGC.Cards
         { return new List<System.Type>() { }; }
         private protected List<CardInfo> GetValidCards(Player player)
         {
+            // Certain AI cards can cause infinite recursion (e.g. Mirror & Doppleganger) and so are not valid for AIs to have
+
             if (GetCards(player) == null || !GetCards(player).Where(card => !card.categories.Contains(MinionCardBase.category)).Any()) { return new List<CardInfo>() { }; }
             else { return GetCards(player).Where(card => !card.categories.Contains(MinionCardBase.category)).ToList(); }
         }
@@ -86,7 +91,7 @@ namespace TTGC.Cards
         {
             for (int i = 0; i < N; i++)
             {
-                AIPlayerHandler.CreateAIWithStats(player.data.view.IsMine, player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), GetEffects(player), GetValidCards(player), CardsAreReassigned(player), 63, new Vector2(0f, -0.5f), 19, new Vector2(0f, -0.5f), 14, new Vector2(0f, 1.1f), 0, new Vector2(0f, 0f), AIPlayerHandler.sandbox, Finalizer: (mID, aID) => SetBandanaColor(mID, aID, GetBandanaColor(player)));
+                AIPlayerHandler.CreateAIWithStats(player.data.view.IsMine, player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), GetEffects(player), GetValidCards(player), CardsAreReassigned(player), GetAISpawnLocation(player), 63, new Vector2(0f, -0.5f), 19, new Vector2(0f, -0.5f), 14, new Vector2(0f, 1.1f), 0, new Vector2(0f, 0f), AIPlayerHandler.sandbox, Finalizer: (mID, aID) => SetBandanaColor(mID, aID, GetBandanaColor(player)));
                 yield return new WaitForSecondsRealtime(delay);
             }
             yield break;
@@ -182,7 +187,9 @@ namespace TTGC.Cards
                 foreach (Player minion in player.data.GetAdditionalData().minions)
                 {
                     minionNum++;
-                    positions.Add(player.gameObject.transform.position - minionNum * baseOffset * new Vector3(UnityEngine.Mathf.Sign(player.gameObject.transform.position.x), 0f, 0f));
+                    positions.Add(AIPlayerHandler.GetMinionSpawnLocation(minion, minionNum));
+                    //positions.Add(minion.data.GetAdditionalData().spawnLocation(player, minionNum));
+                    //positions.Add(player.gameObject.transform.position - minionNum * baseOffset * new Vector3(UnityEngine.Mathf.Sign(player.gameObject.transform.position.x), 0f, 0f));
                 }
             }
             yield return new WaitForEndOfFrame();

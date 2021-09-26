@@ -15,38 +15,48 @@ using Sonigon;
 using TTGC.Extensions;
 using UnboundLib.GameModes;
 using ModdingUtils;
+using ModdingUtils.Extensions;
 
 namespace TTGC.Cards
 {
-    public class DoppelgangerNinjaCard : MinionCardBase
+    public class AgileNinjaCard : MinionCardBase
     {
+        /*
         public override Color GetBandanaColor(Player player)
         {
-            return new Color(1f,0f,0f,1f);
-        }
+            return new Color(66f / 255f, 209f / 255f, 245f / 255f, 1f);
+        }*/
         public override AIPlayerHandler.AISkill GetAISkill(Player player)
         {
-            return AIPlayerHandler.AISkill.Expert;
+            return AIPlayerHandler.AISkill.Normal;
         }
-        public override List<CardInfo> GetCards(Player player)
+        public override GunStatModifier GetGunStats(Player player)
         {
-            Player[] enemyPlayers = PlayerManager.instance.players.Where(p => p.teamID != player.teamID).ToArray();
-
-            if (enemyPlayers.Length == 0)
+            return new GunStatModifier()
             {
-                return null;
-            }
-            else
-            {
-                Player enemy = enemyPlayers[UnityEngine.Random.Range(0, enemyPlayers.Length)];
-                return enemy.data.currentCards;
-            }
+                projectileSpeed_mult = 2f,
+                attackSpeed_mult = 0.5f,
+                damage_mult = 0.5f
+            };
         }
-        public override bool CardsAreReassigned(Player player)
+        public override CharacterStatModifiersModifier GetCharacterStats(Player player)
         {
-            return true;
+            return new CharacterStatModifiersModifier()
+            {
+                movementSpeed_mult = 2f
+            };
         }
-
+        public override BlockModifier GetBlockStats(Player player)
+        {
+            return new BlockModifier()
+            {
+                cdMultiplier_mult = 0.5f
+            };
+        }
+        public override float? GetMaxHealth(Player player)
+        {
+            return 75f;
+        }
 
         protected override GameObject GetCardArt()
         {
@@ -60,7 +70,7 @@ namespace TTGC.Cards
 
         protected override CardInfo.Rarity GetRarity()
         {
-            return CardInfo.Rarity.Rare;
+            return CardInfo.Rarity.Common;
         }
 
         protected override CardInfoStat[] GetStats()
@@ -75,7 +85,7 @@ namespace TTGC.Cards
 
         protected override string GetTitle()
         {
-            return "Doppelganger Ninja";
+            return "Agile Ninja";
         }
     }
 }

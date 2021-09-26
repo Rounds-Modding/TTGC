@@ -54,6 +54,8 @@ namespace TTGC
             CustomCard.BuildCard<ShieldNinjaCard>(ShieldNinjaCard.callback);
             CustomCard.BuildCard<PoisonNinjaCard>(PoisonNinjaCard.callback);
             CustomCard.BuildCard<SentryGunCard>(SentryGunCard.callback);
+            CustomCard.BuildCard<AgileNinjaCard>(AgileNinjaCard.callback);
+            CustomCard.BuildCard<FloatingNinjaCard>(FloatingNinjaCard.callback);
 
             GameModeManager.AddHook(GameModeHooks.HookInitEnd, MinionCardBase.InitPlayerAssigner);
             GameModeManager.AddHook(GameModeHooks.HookBattleStart, MinionCardBase.CreateAllAIs);
@@ -61,6 +63,7 @@ namespace TTGC
             GameModeManager.AddHook(GameModeHooks.HookPickStart, MinionCardBase.RemoveAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPlayerPickEnd, MinionCardBase.WaitForAIs);
             GameModeManager.AddHook(GameModeHooks.HookBattleStart, TimeSinceBattleStart.BattleStart);
+            GameModeManager.AddHook(GameModeHooks.HookPointStart, AIPlayerHandler.StartStalemateHandler);
             GameModeManager.AddHook(GameModeHooks.HookGameStart, (gm) => MinionCardBase.SetPlayersCanJoin(false));
             // reset playersCanJoin
             On.MainMenuHandler.Awake += (orig, self) =>
