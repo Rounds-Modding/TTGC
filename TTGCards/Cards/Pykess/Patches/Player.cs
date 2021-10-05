@@ -63,7 +63,7 @@ namespace TTGCards.Cards.Pykess.Patches
         {
             if (!__instance.data.view.IsMine)
             {
-                return AIPlayerHandler.playersCanJoin;
+                return AIMinionHandler.playersCanJoin;
             }
             else
             {
@@ -81,7 +81,7 @@ namespace TTGCards.Cards.Pykess.Patches
         {
             __instance.playerID = ID;
             __instance.SetColors();
-            return AIPlayerHandler.playersCanJoin;
+            return AIMinionHandler.playersCanJoin;
         }
     }
     // patch to prevent unwanted registering of AIs online
@@ -93,7 +93,7 @@ namespace TTGCards.Cards.Pykess.Patches
         private static bool Prefix(Player __instance, int ID)
         {
             __instance.teamID = ID;
-            return AIPlayerHandler.playersCanJoin;
+            return AIMinionHandler.playersCanJoin;
         }
     }
     // patch to prevent unwanted registering of AIs online
@@ -104,7 +104,7 @@ namespace TTGCards.Cards.Pykess.Patches
     {
         private static bool Prefix(Player __instance)
         {
-            return AIPlayerHandler.playersCanJoin;
+            return AIMinionHandler.playersCanJoin;
         }
     }
     // patch to prevent unwanted registering of AIs online
@@ -115,7 +115,7 @@ namespace TTGCards.Cards.Pykess.Patches
     {
         private static bool Prefix(Player __instance)
         {
-            return AIPlayerHandler.playersCanJoin;
+            return AIMinionHandler.playersCanJoin;
         }
     }
 }

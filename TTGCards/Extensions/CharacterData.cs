@@ -14,14 +14,14 @@ namespace TTGC.Extensions
         public List<Player> minions;
         public bool isAI;
         public Player spawner;
-        public AIPlayerHandler.SpawnLocation spawnLocation;
+        public AIMinionHandler.SpawnLocation spawnLocation;
 
         public CharacterDataAdditionalData()
         {
             minions = new List<Player>() { };
             isAI = false;
             spawner = null;
-            spawnLocation = AIPlayerHandler.SpawnLocation.Owner_Random;
+            spawnLocation = AIMinionHandler.SpawnLocation.Owner_Random;
         }
     }
     public static class CharacterDataExtension
@@ -56,7 +56,7 @@ namespace TTGC.Extensions
             __instance.data.GetAdditionalData().minions = new List<Player>() { };
             __instance.data.GetAdditionalData().isAI = false;
             __instance.data.GetAdditionalData().spawner = null;
-            __instance.data.GetAdditionalData().spawnLocation = AIPlayerHandler.SpawnLocation.Owner_Random;
+            __instance.data.GetAdditionalData().spawnLocation = AIMinionHandler.SpawnLocation.Owner_Random;
         }
     }
     

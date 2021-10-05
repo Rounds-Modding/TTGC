@@ -22,7 +22,7 @@ namespace TTGCards.Cards.Pykess.Patches
             {
                     "Default"
             }));
-            return AIPlayerHandler.playersCanJoin;
+            return AIMinionHandler.playersCanJoin;
         }
     }
 }

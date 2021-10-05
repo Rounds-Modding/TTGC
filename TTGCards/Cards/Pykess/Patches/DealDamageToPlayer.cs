@@ -11,18 +11,11 @@ namespace TTGCards.Cards.Pykess.Patches
     // patch to fix DealDamageToPlayer.Go
     [Serializable]
     [HarmonyPatch(typeof(DealDamageToPlayer), "Go")]
-    class PlayerManagerPatchGetOtherPlayer
+    class DealDamageToPlayerPatchGo
     {
         private static void Prefix(DealDamageToPlayer __instance)
         {
-            if ((Player)__instance.GetFieldValue("target") != null)
-            {
-                Player target = (Player)__instance.GetFieldValue("target");
-                if (target.data.dead || !(bool)target.data.playerVel.GetFieldValue("simulated"))
-                {
-                    __instance.SetFieldValue("target", null);
-                }
-            }
+            __instance.SetFieldValue("target", null);
         }
     }
 }

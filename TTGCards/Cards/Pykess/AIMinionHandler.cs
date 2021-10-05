@@ -19,7 +19,7 @@ using System;
 
 namespace TTGC.Cards
 {
-    public static class AIPlayerHandler
+    public static class AIMinionHandler
     {
         internal static bool playersCanJoin = true;
         internal const float actionDelay = 2.5f;
@@ -61,14 +61,123 @@ namespace TTGC.Cards
             }
             set { }
         }
-        internal static IEnumerator StartStalemateHandler(IGameModeHandler gm)
+
+        internal static Player GetPlayerOrAIWithID(Player[] players, int ID)
         {
-            if (AIPlayerHandler.EndStalemateRoutine != null)
+            return players.Where(player => player.playerID == ID).First();
+        }
+        private static IEnumerator AddAIsToPlayerManager()
+        {
+            List<Player> playersAndAI = PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI).ToList();
+            foreach (Player player in PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI))
             {
-                Unbound.Instance.StopCoroutine(AIPlayerHandler.EndStalemateRoutine);
+                playersAndAI.AddRange(player.data.GetAdditionalData().minions);
+            }
+            playersAndAI = playersAndAI.Distinct().ToList();
+
+            int totPlayers = 0;
+            foreach (Player player in PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI))
+            {
+                totPlayers += 1 + player.data.GetAdditionalData().minions.Count;
+            }
+            PlayerManager.instance.players = new List<Player>() { };
+            for (int i = 0; i < totPlayers; i++)
+            {
+                PlayerManager.instance.players.Add(GetPlayerOrAIWithID(playersAndAI.ToArray(), i));
             }
 
-            AIPlayerHandler.EndStalemateRoutine = Unbound.Instance.StartCoroutine(StalemateHandler());
+            yield break;
+        }
+        private static IEnumerator RemoveAIsFromPlayerManager()
+        {
+            List<Player> players = PlayerManager.instance.players.Where(player => !player.data.GetAdditionalData().isAI).ToList();
+
+            PlayerManager.instance.players = new List<Player>() { };
+            for (int i = 0; i < players.Count; i++)
+            {
+                PlayerManager.instance.players.Add(GetPlayerOrAIWithID(players.ToArray(), i));
+            }
+
+            yield break;
+        }
+
+        internal static IEnumerator CreateAllAIs(IGameModeHandler gm)
+        {
+            yield return new WaitUntil(() => PlayerManager.instance.players.All(player => (bool)player.data.playerVel.GetFieldValue("simulated")));
+            yield return new WaitForSecondsRealtime(0.1f);
+            yield return AddAIsToPlayerManager();
+            yield return new WaitForSecondsRealtime(0.1f);
+
+            List<Player> minionsToSpawn = new List<Player>() { };
+            List<Vector3> positions = new List<Vector3>() { };
+            foreach (Player player in PlayerManager.instance.players.Where(player => player.data.GetAdditionalData().minions.Count > 0))
+            {
+                minionsToSpawn.AddRange(player.data.GetAdditionalData().minions);
+                int minionNum = 0;
+                foreach (Player minion in player.data.GetAdditionalData().minions)
+                {
+                    minionNum++;
+                    positions.Add(AIMinionHandler.GetMinionSpawnLocation(minion, minionNum));
+                }
+            }
+            yield return new WaitForEndOfFrame();
+            foreach (Player minion in minionsToSpawn)
+            {
+                minion.data.weaponHandler.gun.sinceAttack = -1f;
+                minion.data.block.sinceBlock = -1f;
+                minion.data.block.counter = -1f;
+            }
+            yield return new WaitForEndOfFrame();
+            for (int i = 0; i < minionsToSpawn.Count; i++)
+            {
+                try
+                {
+                    minionsToSpawn[i].GetComponentInChildren<AIMinionHandler.EnableDisablePlayer>().EnablePlayer(positions[i]);
+                    minionsToSpawn[i].GetComponentInChildren<AIMinionHandler.EnableDisablePlayer>().ReviveAndSpawn(positions[i]);
+                }
+                catch
+                { }
+                //yield return new WaitForEndOfFrame();
+            }
+            yield return new WaitForSecondsRealtime(0.1f);
+            yield break;
+        }
+        internal static IEnumerator RemoveAllAIs(IGameModeHandler gm)
+        {
+            List<Player> minionsToRemove = new List<Player>() { };
+            foreach (Player player in PlayerManager.instance.players.Where(player => player.data.GetAdditionalData().minions.Count > 0))
+            {
+                minionsToRemove.AddRange(player.data.GetAdditionalData().minions);
+            }
+            yield return new WaitForEndOfFrame();
+            for (int i = 0; i < minionsToRemove.Count; i++)
+            {
+                minionsToRemove[i].GetComponentInChildren<AIMinionHandler.EnableDisablePlayer>().DisablePlayer();
+                yield return new WaitForEndOfFrame();
+            }
+            yield return new WaitForSecondsRealtime(0.1f);
+            yield return RemoveAIsFromPlayerManager();
+            yield return new WaitForSecondsRealtime(0.1f);
+            yield break;
+        }
+        internal static IEnumerator InitPlayerAssigner(IGameModeHandler gm)
+        {
+            PlayerAssigner.instance.maxPlayers = int.MaxValue;
+            yield break;
+        }
+        internal static IEnumerator SetPlayersCanJoin(bool playersCanJoin)
+        {
+            AIMinionHandler.playersCanJoin = playersCanJoin;
+            yield break;
+        }
+        internal static IEnumerator StartStalemateHandler(IGameModeHandler gm)
+        {
+            if (AIMinionHandler.EndStalemateRoutine != null)
+            {
+                Unbound.Instance.StopCoroutine(AIMinionHandler.EndStalemateRoutine);
+            }
+
+            AIMinionHandler.EndStalemateRoutine = Unbound.Instance.StartCoroutine(StalemateHandler());
 
             yield break;
         }
@@ -224,7 +333,7 @@ namespace TTGC.Cards
             }
             void Start()
             {
-                if (AIPlayerHandler.sandbox) { Destroy(this); }
+                if (AIMinionHandler.sandbox) { Destroy(this); }
             }
             internal void DisablePlayer()
             {
@@ -473,7 +582,7 @@ namespace TTGC.Cards
             Vector3 position = Vector3.up * 100f;
             CharacterData AIdata = PhotonNetwork.Instantiate(PlayerAssigner.instance.playerPrefab.name, position, Quaternion.identity, 0, null).GetComponent<CharacterData>();
 
-            NetworkingManager.RPC(typeof(AIPlayerHandler), nameof(RPCA_SetupAI), new object[] { newID, AIdata.view.ViewID, actorID, spawnerID, teamID, activeNow, (byte)skill, (byte)aggression, (byte)AItype, (byte)spawnLocation, maxHealth });
+            NetworkingManager.RPC(typeof(AIMinionHandler), nameof(RPCA_SetupAI), new object[] { newID, AIdata.view.ViewID, actorID, spawnerID, teamID, activeNow, (byte)skill, (byte)aggression, (byte)AItype, (byte)spawnLocation, maxHealth });
 
             return AIdata.player;
 
@@ -618,7 +727,7 @@ namespace TTGC.Cards
             Unbound.Instance.ExecuteAfterSeconds(0.5f, () =>
             {
                 Player minion = ModdingUtils.Utils.FindPlayer.GetPlayerWithActorAndPlayerIDs(actorID, minionID);
-                NetworkingManager.RPC(typeof(AIPlayerHandler), nameof(RPCA_SetFace), new object[] { minion.data.view.ViewID, eyeID, eyeOffset, mouthID, mouthOffset, detailID, detailOffset, detail2ID, detail2Offset });
+                NetworkingManager.RPC(typeof(AIMinionHandler), nameof(RPCA_SetFace), new object[] { minion.data.view.ViewID, eyeID, eyeOffset, mouthID, mouthOffset, detailID, detailOffset, detail2ID, detail2Offset });
             });
             yield break;
         }
@@ -642,7 +751,7 @@ namespace TTGC.Cards
 
             // if there are valid cards, then have the host add them
             string[] cardNames = cards.Select(card => card.cardName).ToArray();
-            NetworkingManager.RPC(typeof(AIPlayerHandler), nameof(RPCA_AddCardsToAI), new object[] { minionID, actorID, cardNames, reassign});
+            NetworkingManager.RPC(typeof(AIMinionHandler), nameof(RPCA_AddCardsToAI), new object[] { minionID, actorID, cardNames, reassign});
             
             yield break;
         }
@@ -872,7 +981,7 @@ namespace TTGC.Cards
     {
         private static bool Prefix(Gun __instance)
         {
-            if (__instance.player.data.GetAdditionalData().isAI && TimeSinceBattleStart.timeSince <= AIPlayerHandler.actionDelay) 
+            if (__instance.player.data.GetAdditionalData().isAI && TimeSinceBattleStart.timeSince <= AIMinionHandler.actionDelay) 
             {
                 return false; 
             }
@@ -885,7 +994,7 @@ namespace TTGC.Cards
     {
         private static bool Prefix(Block __instance)
         {
-            if (((CharacterData)__instance.GetFieldValue("data")).GetAdditionalData().isAI && TimeSinceBattleStart.timeSince <= AIPlayerHandler.actionDelay)
+            if (((CharacterData)__instance.GetFieldValue("data")).GetAdditionalData().isAI && TimeSinceBattleStart.timeSince <= AIMinionHandler.actionDelay)
             {
                 return false; 
             }

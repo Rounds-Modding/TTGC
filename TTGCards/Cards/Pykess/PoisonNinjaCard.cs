@@ -25,9 +25,9 @@ namespace TTGC.Cards
         {
             return new Color(0f,1f, 0f, 1f);
         }
-        public override AIPlayerHandler.AISkill GetAISkill(Player player)
+        public override AIMinionHandler.AISkill GetAISkill(Player player)
         {
-            return AIPlayerHandler.AISkill.Normal;
+            return AIMinionHandler.AISkill.Normal;
         }
         public override List<CardInfo> GetCards(Player player)
         {

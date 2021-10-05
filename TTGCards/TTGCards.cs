@@ -57,18 +57,18 @@ namespace TTGC
             CustomCard.BuildCard<AgileNinjaCard>(AgileNinjaCard.callback);
             CustomCard.BuildCard<FloatingNinjaCard>(FloatingNinjaCard.callback);
 
-            GameModeManager.AddHook(GameModeHooks.HookInitEnd, MinionCardBase.InitPlayerAssigner);
-            GameModeManager.AddHook(GameModeHooks.HookBattleStart, MinionCardBase.CreateAllAIs);
-            GameModeManager.AddHook(GameModeHooks.HookPointEnd, MinionCardBase.RemoveAllAIs);
-            GameModeManager.AddHook(GameModeHooks.HookPickStart, MinionCardBase.RemoveAllAIs);
+            GameModeManager.AddHook(GameModeHooks.HookInitEnd, AIMinionHandler.InitPlayerAssigner);
+            GameModeManager.AddHook(GameModeHooks.HookBattleStart, AIMinionHandler.CreateAllAIs);
+            GameModeManager.AddHook(GameModeHooks.HookPointEnd, AIMinionHandler.RemoveAllAIs);
+            GameModeManager.AddHook(GameModeHooks.HookPickStart, AIMinionHandler.RemoveAllAIs);
             GameModeManager.AddHook(GameModeHooks.HookPlayerPickEnd, MinionCardBase.WaitForAIs);
             GameModeManager.AddHook(GameModeHooks.HookBattleStart, TimeSinceBattleStart.BattleStart);
-            GameModeManager.AddHook(GameModeHooks.HookPointStart, AIPlayerHandler.StartStalemateHandler);
-            GameModeManager.AddHook(GameModeHooks.HookGameStart, (gm) => MinionCardBase.SetPlayersCanJoin(false));
+            GameModeManager.AddHook(GameModeHooks.HookPointStart, AIMinionHandler.StartStalemateHandler);
+            GameModeManager.AddHook(GameModeHooks.HookGameStart, (gm) => AIMinionHandler.SetPlayersCanJoin(false));
             // reset playersCanJoin
             On.MainMenuHandler.Awake += (orig, self) =>
             {
-                MinionCardBase.SetPlayersCanJoin(true);
+                AIMinionHandler.SetPlayersCanJoin(true);
 
                 orig(self);
             };

@@ -25,13 +25,13 @@ namespace TTGC.Cards
         {
             return new Color(1f,0f,1f, 1f);
         }
-        public override AIPlayerHandler.SpawnLocation GetAISpawnLocation(Player player)
+        public override AIMinionHandler.SpawnLocation GetAISpawnLocation(Player player)
         {
-            return AIPlayerHandler.SpawnLocation.Random;
+            return AIMinionHandler.SpawnLocation.Random;
         }
-        public override AIPlayerHandler.AISkill GetAISkill(Player player)
+        public override AIMinionHandler.AISkill GetAISkill(Player player)
         {
-            return AIPlayerHandler.AISkill.Normal;
+            return AIMinionHandler.AISkill.Normal;
         }
         public override float? GetMaxHealth(Player player)
         {

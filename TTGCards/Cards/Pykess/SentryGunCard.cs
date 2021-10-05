@@ -25,13 +25,13 @@ namespace TTGC.Cards
         {
             return new Color(0.25f,0.25f,0.25f, 1f);
         }
-        public override AIPlayerHandler.AISkill GetAISkill(Player player)
+        public override AIMinionHandler.AISkill GetAISkill(Player player)
         {
-            return AIPlayerHandler.AISkill.Expert;
+            return AIMinionHandler.AISkill.Expert;
         }
-        public override AIPlayerHandler.SpawnLocation GetAISpawnLocation(Player player)
+        public override AIMinionHandler.SpawnLocation GetAISpawnLocation(Player player)
         {
-            return AIPlayerHandler.SpawnLocation.Center;
+            return AIMinionHandler.SpawnLocation.Center;
         }
         public override List<CardInfo> GetCards(Player player)
         {
