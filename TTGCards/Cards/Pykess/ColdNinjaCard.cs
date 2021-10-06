@@ -12,10 +12,12 @@ using SoundImplementation;
 using HarmonyLib;
 using System.Reflection;
 using Sonigon;
-using TTGC.Extensions;
+using ModdingUtils.AIMinion.Extensions;
+using ModdingUtils.AIMinion;
 using UnboundLib.GameModes;
 using ModdingUtils;
 using ModdingUtils.Extensions;
+using ModdingUtils.Utils;
 
 namespace TTGC.Cards
 {
@@ -33,7 +35,7 @@ namespace TTGC.Cards
         {
             List<string> coldCards = new List<string>() { "lifestealer", "chilling presence", "chase" };
 
-            return Cards.allCards.Where(card => coldCards.Contains(card.cardName.ToLower())).ToList();
+            return ModdingUtils.Utils.Cards.all.Where(card => coldCards.Contains(card.cardName.ToLower())).ToList();
         }
         public override GunAmmoStatModifier GetGunAmmoStats(Player player)
         {

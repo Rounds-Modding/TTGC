@@ -12,7 +12,8 @@ using SoundImplementation;
 using HarmonyLib;
 using System.Reflection;
 using Sonigon;
-using TTGC.Extensions;
+using ModdingUtils.AIMinion.Extensions;
+using ModdingUtils.AIMinion;
 using UnboundLib.GameModes;
 using ModdingUtils;
 using ModdingUtils.Extensions;
@@ -31,9 +32,9 @@ namespace TTGC.Cards
         }
         public override List<CardInfo> GetCards(Player player)
         {
-            CardInfo defender = Cards.allCards.Where(card => card.cardName.ToLower() == "defender").First();
-            CardInfo shockwave = Cards.allCards.Where(card => card.cardName.ToLower() == "shockwave").First();
-            CardInfo echo = Cards.allCards.Where(card => card.cardName.ToLower() == "echo").First();
+            CardInfo defender = ModdingUtils.Utils.Cards.all.Where(card => card.cardName.ToLower() == "defender").First();
+            CardInfo shockwave = ModdingUtils.Utils.Cards.all.Where(card => card.cardName.ToLower() == "shockwave").First();
+            CardInfo echo = ModdingUtils.Utils.Cards.all.Where(card => card.cardName.ToLower() == "echo").First();
 
             return new List<CardInfo>() { echo, shockwave };
         }

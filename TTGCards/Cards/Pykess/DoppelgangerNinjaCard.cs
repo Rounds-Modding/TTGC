@@ -12,7 +12,8 @@ using SoundImplementation;
 using HarmonyLib;
 using System.Reflection;
 using Sonigon;
-using TTGC.Extensions;
+using ModdingUtils.AIMinion.Extensions;
+using ModdingUtils.AIMinion;
 using UnboundLib.GameModes;
 using ModdingUtils;
 

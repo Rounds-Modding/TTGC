@@ -12,7 +12,8 @@ using SoundImplementation;
 using HarmonyLib;
 using System.Reflection;
 using Sonigon;
-using TTGC.Extensions;
+using ModdingUtils.AIMinion.Extensions;
+using ModdingUtils.AIMinion;
 using UnboundLib.GameModes;
 using ModdingUtils;
 using ModdingUtils.Extensions;
@@ -31,7 +32,7 @@ namespace TTGC.Cards
         }
         public override List<CardInfo> GetCards(Player player)
         {
-            return Cards.allCards.Where(card => card.cardName.ToLower() == "poison").ToList();
+            return ModdingUtils.Utils.Cards.all.Where(card => card.cardName.ToLower() == "poison").ToList();
         }
 
         protected override GameObject GetCardArt()

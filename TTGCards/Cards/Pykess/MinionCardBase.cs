@@ -12,17 +12,33 @@ using SoundImplementation;
 using HarmonyLib;
 using System.Reflection;
 using Sonigon;
-using TTGC.Extensions;
 using UnboundLib.GameModes;
 using ModdingUtils;
 using CardChoiceSpawnUniqueCardPatch.CustomCategories;
 using System;
+using ModdingUtils.AIMinion.Extensions;
+using ModdingUtils.AIMinion;
 
 namespace TTGC.Cards
 {
+    /*
+     * TODO:
+     * [X] make ninjas invalid cards for glitched/theft cards
+     *      |-> "NoRemove" and "NoRandom"
+     * [?] fix bandana color issue in online when lag is present
+     * [X] fix AIs being able to attack/block immediately when spawning in FFA mode
+     * [X] fix end stalemate being called unecessarily
+     * [?] fix game bork after match end when paired with CompetitiveRounds
+     *      |-> need to patch PlayerManager.PlayerDied to calculate the number of players left alive to be the number of ENEMY players left alive
+     * [ ] add "emergency" OOB handler component to AIs to instakill them once they are sufficiently outside the bounds of the map
+     * [~] fix possibility of AIs dying for only one player, this probably comes from the Phoenix patch
+     * [X] remove FollowPlayer patch to fix Saw
+     * [ ] fix player skins being the wrong color (or wrong material maybe?)
+     */
     public abstract class MinionCardBase : CustomCard
     {
-        public static CardCategory category = CustomCardCategories.instance.CardCategory("AIMinion");
+        public static CardCategory minionCategory = CustomCardCategories.instance.CardCategory("AIMinion");
+        public static CardCategory[] categories = new CardCategory[] { minionCategory, CustomCardCategories.instance.CardCategory("NoRemove"), CustomCardCategories.instance.CardCategory("NoRandom") };
 
         internal static bool AIsDoneSpawning = true;
 
@@ -67,17 +83,17 @@ namespace TTGC.Cards
         {
             // Certain AI cards can cause infinite recursion (e.g. Mirror & Doppleganger) and so are not valid for AIs to have
 
-            if (GetCards(player) == null || !GetCards(player).Where(card => !card.categories.Contains(MinionCardBase.category)).Any()) { return new List<CardInfo>() { }; }
-            else { return GetCards(player).Where(card => !card.categories.Contains(MinionCardBase.category)).ToList(); }
+            if (GetCards(player) == null || !GetCards(player).Where(card => !card.categories.Contains(MinionCardBase.minionCategory)).Any()) { return new List<CardInfo>() { }; }
+            else { return GetCards(player).Where(card => !card.categories.Contains(MinionCardBase.minionCategory)).ToList(); }
         }
         public override void SetupCard(CardInfo cardInfo, Gun gun, ApplyCardStats cardStats, CharacterStatModifiers statModifiers)
         {
-            cardInfo.categories = cardInfo.categories.Concat(new CardCategory[] { MinionCardBase.category }).ToArray();
+            cardInfo.categories = MinionCardBase.categories;
         }
         public override void OnAddCard(Player player, Gun gun, GunAmmo gunAmmo, CharacterData data, HealthHandler health, Gravity gravity, Block block, CharacterStatModifiers characterStats)
         {
             // AIs can't have AIs
-            if (player.data.GetAdditionalData().isAI)
+            if (player.data.GetAdditionalData().isAIMinion)
             {
                 return;
             }

@@ -12,7 +12,8 @@ using SoundImplementation;
 using HarmonyLib;
 using System.Reflection;
 using Sonigon;
-using TTGC.Extensions;
+using ModdingUtils.AIMinion.Extensions;
+using ModdingUtils.AIMinion;
 using UnboundLib.GameModes;
 using ModdingUtils;
 using ModdingUtils.Extensions;
@@ -37,7 +38,7 @@ namespace TTGC.Cards
         {
             List<string> floatCards = new List<string>() { "tank", "tank", "tank" };
 
-            return Cards.allCards.Where(card => floatCards.Contains(card.cardName.ToLower())).ToList();
+            return ModdingUtils.Utils.Cards.all.Where(card => floatCards.Contains(card.cardName.ToLower())).ToList();
         }
         public override GunAmmoStatModifier GetGunAmmoStats(Player player)
         {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using HarmonyLib;
+using ModdingUtils.Utils;
 // stolen from PCE but that's okay because I wrote it
 namespace TTGC.Cards
 {

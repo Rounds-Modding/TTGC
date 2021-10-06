@@ -12,7 +12,8 @@ using SoundImplementation;
 using HarmonyLib;
 using System.Reflection;
 using Sonigon;
-using TTGC.Extensions;
+using ModdingUtils.AIMinion.Extensions;
+using ModdingUtils.AIMinion;
 using UnboundLib.GameModes;
 using ModdingUtils;
 using ModdingUtils.Extensions;
@@ -36,7 +37,7 @@ namespace TTGC.Cards
         public override List<CardInfo> GetCards(Player player)
         {
             List<string> sentryCards = new List<string>() { "spray", "quick reload" };
-            return Cards.allCards.Where(card => sentryCards.Contains(card.cardName.ToLower())).ToList();
+            return ModdingUtils.Utils.Cards.all.Where(card => sentryCards.Contains(card.cardName.ToLower())).ToList();
         }
         public override CharacterStatModifiersModifier GetCharacterStats(Player player)
         {
