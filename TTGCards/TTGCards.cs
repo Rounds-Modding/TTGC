@@ -52,9 +52,11 @@ namespace TTGC
             CustomCard.BuildCard<NinjaSwarmCard>(NinjaSwarmCard.callback);
             CustomCard.BuildCard<ShieldNinjaCard>(ShieldNinjaCard.callback);
             CustomCard.BuildCard<PoisonNinjaCard>(PoisonNinjaCard.callback);
-            CustomCard.BuildCard<SentryGunCard>(SentryGunCard.callback);
+            CustomCard.BuildCard<SentryGunNinjaCard>(SentryGunNinjaCard.callback);
             CustomCard.BuildCard<AgileNinjaCard>(AgileNinjaCard.callback);
             CustomCard.BuildCard<FloatingNinjaCard>(FloatingNinjaCard.callback);
+
+            ModdingUtils.Utils.Cards.instance.AddOnRemoveCallback(MinionCardBase.OnRemoveCallback);
 
             GameModeManager.AddHook(GameModeHooks.HookPlayerPickEnd, MinionCardBase.WaitForAIs);
 

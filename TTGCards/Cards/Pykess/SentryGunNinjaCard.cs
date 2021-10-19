@@ -20,7 +20,7 @@ using ModdingUtils.Extensions;
 
 namespace TTGC.Cards
 {
-    public class SentryGunCard: MinionCardBase
+    public class SentryGunNinjaCard: MinionCardBase
     {
         public override Color GetBandanaColor(Player player)
         {
@@ -55,7 +55,7 @@ namespace TTGC.Cards
 
         protected override string GetDescription()
         {
-            return "Here's your stupid sentry gun.";
+            return "Recruit a ninja that really wants to be a sentry gun.";
         }
 
         protected override CardInfo.Rarity GetRarity()
@@ -75,7 +75,7 @@ namespace TTGC.Cards
 
         protected override string GetTitle()
         {
-            return "Sentry Gun";
+            return "Sentry Gun Ninja";
         }
     }
 }

@@ -22,11 +22,11 @@ namespace TTGC.Cards
 {
     public class AgileNinjaCard : MinionCardBase
     {
-        /*
+        
         public override Color GetBandanaColor(Player player)
         {
-            return new Color(66f / 255f, 209f / 255f, 245f / 255f, 1f);
-        }*/
+            return new Color(0.5f,0.5f,0f,1f);
+        }
         public override AIMinionHandler.AISkill GetAISkill(Player player)
         {
             return AIMinionHandler.AISkill.Normal;
@@ -66,7 +66,7 @@ namespace TTGC.Cards
 
         protected override string GetDescription()
         {
-            return null;
+            return "Recruit a ninja that sprints after enemies.";
         }
 
         protected override CardInfo.Rarity GetRarity()

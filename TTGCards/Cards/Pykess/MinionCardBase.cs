@@ -18,6 +18,7 @@ using CardChoiceSpawnUniqueCardPatch.CustomCategories;
 using System;
 using ModdingUtils.AIMinion.Extensions;
 using ModdingUtils.AIMinion;
+using ModdingUtils.Extensions;
 
 namespace TTGC.Cards
 {
@@ -89,24 +90,30 @@ namespace TTGC.Cards
         public override void SetupCard(CardInfo cardInfo, Gun gun, ApplyCardStats cardStats, CharacterStatModifiers statModifiers)
         {
             cardInfo.categories = MinionCardBase.categories;
+            cardInfo.GetAdditionalData().canBeReassigned = false;
         }
         public override void OnAddCard(Player player, Gun gun, GunAmmo gunAmmo, CharacterData data, HealthHandler health, Gravity gravity, Block block, CharacterStatModifiers characterStats)
         {
             // AIs can't have AIs
-            if (player.data.GetAdditionalData().isAIMinion)
+            if (ModdingUtils.AIMinion.Extensions.CharacterDataExtension.GetAdditionalData(player.data).isAIMinion)
             {
                 return;
             }
+            int idx = player.data.currentCards.Count;
 
             AIsDoneSpawning = false;
 
-            Unbound.Instance.StartCoroutine(SpawnAIs(GetNumberOfMinions(player), delayBetweenSpawns, player, gun, gunAmmo, data, health, gravity, block, characterStats));
+            Unbound.Instance.StartCoroutine(SpawnAIs(idx, GetNumberOfMinions(player), delayBetweenSpawns, player, gun, gunAmmo, data, health, gravity, block, characterStats));
             Unbound.Instance.ExecuteAfterSeconds(GetNumberOfMinions(player) * delayBetweenSpawns + 1f, () => { AIsDoneSpawning = true; });
         }
-        private IEnumerator SpawnAIs(int N, float delay, Player player, Gun gun, GunAmmo gunAmmo, CharacterData data, HealthHandler health, Gravity gravity, Block block, CharacterStatModifiers characterStats)
+        private IEnumerator SpawnAIs(int idx, int N, float delay, Player player, Gun gun, GunAmmo gunAmmo, CharacterData data, HealthHandler health, Gravity gravity, Block block, CharacterStatModifiers characterStats)
         {
             for (int i = 0; i < N; i++)
             {
+                int nextID = (int)typeof(AIMinionHandler).GetProperty("NextAvailablePlayerID", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null, null);
+                Extensions.CharacterStatModifiersExtension.GetAdditionalData(characterStats).minionIDstoCardIndxMap[(nextID, player.data.view.ControllerActorNr)] = idx;
+
+
                 AIMinionHandler.CreateAIWithStats(player.data.view.IsMine, player.playerID, player.teamID, player.data.view.ControllerActorNr, GetAISkill(player), GetAIAggression(player), GetAI(player), GetMaxHealth(player), GetBlockStats(player), GetGunAmmoStats(player), GetGunStats(player), GetCharacterStats(player), GetGravityModifier(player), GetEffects(player), GetValidCards(player), CardsAreReassigned(player), GetAISpawnLocation(player), 63, new Vector2(0f, -0.5f), 19, new Vector2(0f, -0.5f), 14, new Vector2(0f, 1.1f), 0, new Vector2(0f, 0f), AIMinionHandler.sandbox, Finalizer: (mID, aID) => SetBandanaColor(mID, aID, GetBandanaColor(player)));
                 yield return new WaitForSecondsRealtime(delay);
             }
@@ -129,6 +136,31 @@ namespace TTGC.Cards
         }
         public override void OnRemoveCard()
         {
+        }
+        private static Player GetMinionWithPlayerAndActorID(Player[] minions, int playerID, int actorID)
+        {
+            return minions.Where(m => (m.playerID == playerID && m.data.view.ControllerActorNr == actorID)).FirstOrDefault();
+        }
+        internal static void OnRemoveCallback(Player player, CardInfo card, int indx)
+        {
+            Unbound.Instance.ExecuteAfterSeconds(0.25f, () =>
+            {
+                // restore all minions, disable any that were removed
+                foreach ((int minionID, int actorID) in Extensions.CharacterStatModifiersExtension.GetAdditionalData(player.data.stats).oldMinionIDstoCardIndxMap.Keys.ToList())
+                {
+                    int idx = Extensions.CharacterStatModifiersExtension.GetAdditionalData(player.data.stats).oldMinionIDstoCardIndxMap[(minionID, actorID)];
+
+                    if (idx == indx)
+                    {
+                        ModdingUtils.AIMinion.Extensions.CharacterDataExtension.GetAdditionalData(GetMinionWithPlayerAndActorID(ModdingUtils.AIMinion.Extensions.CharacterDataExtension.GetAdditionalData(player.data).oldMinions.ToArray(), minionID, actorID).data).isEnabled = false;
+                    }
+
+                    ModdingUtils.AIMinion.Extensions.CharacterDataExtension.GetAdditionalData(player.data).minions.Add(GetMinionWithPlayerAndActorID(ModdingUtils.AIMinion.Extensions.CharacterDataExtension.GetAdditionalData(player.data).oldMinions.ToArray(), minionID, actorID));
+                    Extensions.CharacterStatModifiersExtension.GetAdditionalData(player.data.stats).minionIDstoCardIndxMap[(minionID, actorID)] = idx == indx ? -1 : idx > indx ? idx - 1 : idx;
+
+                }
+            });
+
         }
 
         public override string GetModName()
@@ -158,6 +190,21 @@ namespace TTGC.Cards
     }
     internal class ExtraName : MonoBehaviour
     {
+        private static GameObject _extraTextObj = null;
+        internal static GameObject extraTextObj
+        {
+            get
+            {
+                if (_extraTextObj != null) { return _extraTextObj; }
+
+                _extraTextObj = new GameObject("ExtraCardText", typeof(TextMeshProUGUI), typeof(DestroyOnUnparent));
+                DontDestroyOnLoad(_extraTextObj);
+                return _extraTextObj;
+            
+
+            }
+            private set { }
+        }
         
         private void Start()
         {
@@ -166,7 +213,7 @@ namespace TTGC.Cards
             // find bottom right edge object
             RectTransform[] allChildrenRecursive = this.gameObject.GetComponentsInChildren<RectTransform>();
             GameObject BottomLeftCorner = allChildrenRecursive.Where(obj => obj.gameObject.name == "EdgePart (1)").FirstOrDefault().gameObject;
-            GameObject modNameObj = UnityEngine.GameObject.Instantiate(new GameObject("ExtraCardText", typeof(TextMeshProUGUI), typeof(DestroyOnUnparent)), BottomLeftCorner.transform.position, BottomLeftCorner.transform.rotation, BottomLeftCorner.transform);
+            GameObject modNameObj = UnityEngine.GameObject.Instantiate(extraTextObj, BottomLeftCorner.transform.position, BottomLeftCorner.transform.rotation, BottomLeftCorner.transform);
             TextMeshProUGUI modText = modNameObj.gameObject.GetComponent<TextMeshProUGUI>();
             modText.text = "Pykess";
             modText.enableWordWrapping = false;

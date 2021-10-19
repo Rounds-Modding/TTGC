@@ -24,7 +24,7 @@ namespace TTGC.Cards
     {
         public override Color GetBandanaColor(Player player)
         {
-            return new Color(1f,1f,1f, 1f);
+            return new Color(0f,0f,0.3f, 1f);
         }
         public override AIMinionHandler.AIAggression GetAIAggression(Player player)
         {
@@ -76,7 +76,7 @@ namespace TTGC.Cards
 
         protected override string GetDescription()
         {
-            return null;
+            return "Recruit a ninja that excels at blocking and shoving enemies.";
         }
 
         protected override CardInfo.Rarity GetRarity()

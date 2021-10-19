@@ -24,7 +24,8 @@ namespace TTGC.Cards
     {
         public override Color GetBandanaColor(Player player)
         {
-            return new Color(1f,0f,1f, 1f);
+            // random bandana color with 0 or 1 in each RGB field
+            return new Color(UnityEngine.Random.Range(0,2), UnityEngine.Random.Range(0, 2), UnityEngine.Random.Range(0, 2), 1f);
         }
         public override AIMinionHandler.SpawnLocation GetAISpawnLocation(Player player)
         {
@@ -82,7 +83,7 @@ namespace TTGC.Cards
 
         protected override string GetDescription()
         {
-            return null;
+            return "Recruit a swarm of angry little ninjas.";
         }
 
         protected override CardInfo.Rarity GetRarity()

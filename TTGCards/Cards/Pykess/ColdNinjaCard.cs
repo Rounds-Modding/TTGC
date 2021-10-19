@@ -25,7 +25,7 @@ namespace TTGC.Cards
     {
         public override Color GetBandanaColor(Player player)
         {
-            return new Color(66f / 255f, 209f / 255f, 245f / 255f, 1f);
+            return new Color(0.5f * 66f / 255f, 0.5f *  209f / 255f, 0.5f * 245f / 255f, 1f);
         }
         public override AIMinionHandler.AI GetAI(Player player)
         {
@@ -33,7 +33,7 @@ namespace TTGC.Cards
         }
         public override List<CardInfo> GetCards(Player player)
         {
-            List<string> coldCards = new List<string>() { "lifestealer", "chilling presence", "chase" };
+            List<string> coldCards = new List<string>() { "chilling presence", "chase" };
 
             return ModdingUtils.Utils.Cards.all.Where(card => coldCards.Contains(card.cardName.ToLower())).ToList();
         }
@@ -55,7 +55,7 @@ namespace TTGC.Cards
 
         protected override string GetDescription()
         {
-            return null;
+            return "Recruit a ninja with a cold aura that slows your enemies down.";
         }
 
         protected override CardInfo.Rarity GetRarity()

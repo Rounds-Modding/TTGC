@@ -23,7 +23,7 @@ namespace TTGC.Cards
     {
         public override Color GetBandanaColor(Player player)
         {
-            return new Color(0f,1f,0f, 1f);
+            return new Color(0.5f,0.5f,0.5f, 1f);
         }
         public override AIMinionHandler.AISkill GetAISkill(Player player)
         {
@@ -45,7 +45,7 @@ namespace TTGC.Cards
 
         protected override string GetDescription()
         {
-            return null;
+            return "Recruit a ninja that copies all your current cards.";
         }
 
         protected override CardInfo.Rarity GetRarity()

@@ -24,7 +24,7 @@ namespace TTGC.Cards
     {
         public override Color GetBandanaColor(Player player)
         {
-            return new Color(1f, 1f, 1f, 0.1f);
+            return new Color(1f, 0.5f, 1f, 0.3792f);
         }
         public override AIMinionHandler.SpawnLocation GetAISpawnLocation(Player player)
         {
@@ -77,7 +77,7 @@ namespace TTGC.Cards
 
         protected override string GetDescription()
         {
-            return null;
+            return "Recruit a ninja that floats in front of your enemies, blocking their shots.";
         }
 
         protected override CardInfo.Rarity GetRarity()
@@ -122,6 +122,7 @@ namespace TTGC.Cards
 
                 colorEffect.SetColorMax(new Color(baseColorMax.r, baseColorMax.g, baseColorMax.b, 0.025f));
                 colorEffect.SetColorMin(new Color(baseColorMin.r, baseColorMin.g, baseColorMin.b, 0.025f));
+
                 yield break;
             }
         }
