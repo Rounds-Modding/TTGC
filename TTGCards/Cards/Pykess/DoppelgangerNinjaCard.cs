@@ -51,7 +51,7 @@ namespace TTGC.Cards
 
         protected override GameObject GetCardArt()
         {
-            return null;
+            return TTGC.ArtAssets_Pykess.LoadAsset<GameObject>("C_DoppelgangerNinja");
         }
 
         protected override string GetDescription()

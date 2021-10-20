@@ -1,17 +1,23 @@
 ManifestFileVersion: 0
-CRC: 2964406226
+CRC: 3757792558
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 45117abbb756f57c6ed1671291e2de87
+    Hash: 41fc698501f8323fb3788d7bd797bf9d
   TypeTreeHash:
     serializedVersion: 2
-    Hash: 02ce44bc4273a72e421d87bf25f90904
+    Hash: 4625f5a2a44c3f80cf8bc89e157ff873
 HashAppended: 0
 ClassTypes:
 - Class: 1
   Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
 - Class: 28
+  Script: {instanceID: 0}
+- Class: 48
   Script: {instanceID: 0}
 - Class: 74
   Script: {instanceID: 0}
@@ -22,8 +28,12 @@ ClassTypes:
 - Class: 114
   Script: {fileID: -765806418, guid: f70555f144d8491a825f0804e09c671c, type: 3}
 - Class: 114
+  Script: {fileID: -1200242548, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+- Class: 114
   Script: {fileID: 11500000, guid: 55d011acaec8c9fbbcc2d1a14a0dd65a, type: 3}
 - Class: 115
+  Script: {instanceID: 0}
+- Class: 212
   Script: {instanceID: 0}
 - Class: 213
   Script: {instanceID: 0}
@@ -32,22 +42,110 @@ ClassTypes:
 - Class: 224
   Script: {instanceID: 0}
 Assets:
+- Assets/Prefabs/Background 1.controller
+- Assets/Prefabs/Images/Gun.png
+- Assets/Prefabs/Background 3.controller
+- Assets/Prefabs/Images/Body_1a.png
+- Assets/Prefabs/Images/Body1_3.png
 - 'Assets/Prefabs/Images/Body1 #98391.png'
+- Assets/Prefabs/TTGFace.prefab
+- Assets/Prefabs/ShieldWake.controller
+- Assets/Prefabs/Images/Orb_White2.png
+- Assets/Prefabs/Images/CircleHollow3Blur.png
 - Assets/Prefabs/Images/Babyteeth_02.png
+- 'Assets/Prefabs/Images/Body_Big1 #98141.png'
+- Assets/Prefabs/Images/Body_1.png
+- Assets/Prefabs/FloatingNinja.anim
+- Assets/Prefabs/AgileBckground.anim
+- Assets/Prefabs/DoppelgangerNinja.anim
+- Assets/Prefabs/Images/E_10_grumpy.png
 - Assets/Prefabs/AnimationClip/Anim_BgDots1.anim
+- Assets/Prefabs/C_FloatingNinja.prefab
+- 'Assets/Prefabs/Images/Body1 #94004.png'
+- Assets/Prefabs/ColdNinja.anim
 - Assets/Prefabs/C_QuickReload.prefab
+- Assets/Prefabs/Images/Snowflake.png
+- Assets/Prefabs/Images/Body_2.png
+- 'Assets/Prefabs/Images/Body1 #98352.png'
+- Assets/Prefabs/AgileNinja.anim
+- 'Assets/Prefabs/Images/Body1 #98095.png'
+- Assets/Prefabs/Face.controller
+- Assets/Prefabs/Images/reference.png
+- Assets/Prefabs/FloatingBackground.anim
+- Assets/Prefabs/C_ShieldNinja.prefab
+- Assets/Prefabs/Images/Body2.png
+- Assets/Prefabs/Images/Body_Back1.png
 - Assets/Prefabs/AnimationClip/BG.controller
+- Assets/Prefabs/DoppelgangerBackground.anim
+- Assets/Prefabs/Images/Body_Big1.png
+- 'Assets/Prefabs/Images/Body1 #98173.png'
+- Assets/Prefabs/C_MirrorNinja.prefab
+- Assets/Prefabs/Background 4.controller
+- 'Assets/Prefabs/Images/Body1 #98426.png'
+- Assets/Prefabs/Body 2.controller
 - Assets/Prefabs/AnimatorController/BG_Dots.controller
 - Assets/Prefabs/Images/Rambo_02.png
+- Assets/Prefabs/FloatingNinjaFace.anim
+- Assets/Prefabs/Background 2.controller
+- 'Assets/Prefabs/Images/Body1 #98216.png'
 - Assets/Prefabs/AnimationClip/BG 1.controller
+- 'Assets/Prefabs/Images/Body1 #98029.png'
 - Assets/Prefabs/AnimationClip/Anim_Circle1.anim
 - Assets/Prefabs/AnimatorController/Art_Body.controller
 - Assets/Prefabs/AnimationClip/Gun.controller
+- Assets/Prefabs/Shield.controller
 - Assets/Prefabs/AnimationClip/Anim_Bg1.anim
+- Assets/Prefabs/C_ColdNinja.prefab
+- 'Assets/Prefabs/Images/Body1 #98424.png'
 - Assets/Prefabs/TTGCharacter.prefab
+- Assets/Prefabs/Shimmer.anim
+- Assets/Prefabs/ShieldNinja.anim
 - Assets/Prefabs/Images/Orc_01.png
+- 'Assets/Prefabs/Images/Body1 #98381.png'
+- Assets/Prefabs/Images/Body1.png
+- Assets/Prefabs/Shimmer.controller
 - Assets/Prefabs/Images/Emoji_eyes1.png
+- Assets/Prefabs/Images/Body_small1.png
+- Assets/Prefabs/SnowFlakes.controller
+- Assets/Prefabs/Body 3.controller
+- Assets/Prefabs/Background 5.controller
 - Assets/Prefabs/Images/E_21_Mask.png
+- 'Assets/Prefabs/Images/Body1 #98123.png'
+- Assets/Prefabs/C_DoppelgangerNinja.prefab
+- Assets/Prefabs/Mirror.controller
+- 'Assets/Prefabs/Images/Body1 #98198.png'
+- Assets/Prefabs/Images/DotsDetail_2.png
+- Assets/Prefabs/Background 6.controller
+- Assets/Prefabs/Images/Body3_2.png
+- Assets/Prefabs/SnowFlakes.anim
+- Assets/Prefabs/C_AgileNinja.prefab
+- 'Assets/Prefabs/Images/Body1 #98001.png'
+- 'Assets/Prefabs/Images/Body_1 #98212.png'
 - Assets/Prefabs/AnimationClip/Ghost.controller
+- Assets/Prefabs/Images/Body1_2.png
+- Assets/Prefabs/Images/E_13_slightlySad.png
+- Assets/Prefabs/Body 4.controller
+- Assets/Prefabs/Images/Snowflake2.png
+- Assets/Prefabs/Images/TTGBackgroundSource.png
+- Assets/Prefabs/ShieldWake.anim
+- Assets/Prefabs/FG_Dots.controller
+- Assets/Prefabs/Images/Flakes1.png
+- 'Assets/Prefabs/Images/Body1 #98073.png'
+- Assets/Prefabs/Shield.anim
 - Assets/Prefabs/AnimatorController/BG (2) 1.controller
+- Assets/Prefabs/Body 1.controller
+- Assets/Prefabs/ColdBackground.anim
+- Assets/Prefabs/FG_DotsAnim.anim
+- Assets/Prefabs/Images/TTGBackground.png
+- Assets/Prefabs/Images/Body3.png
+- Assets/Prefabs/Mirror.anim
+- 'Assets/Prefabs/Images/Body1 #98286.png'
+- Assets/Prefabs/Body.controller
+- 'Assets/Prefabs/Images/Body1 #98253.png'
+- 'Assets/Prefabs/Images/Body1 #98115.png'
+- Assets/Prefabs/Background.controller
+- 'Assets/Prefabs/Images/Body1 #98031.png'
+- 'Assets/Prefabs/Images/Body1 #97969.png'
+- Assets/Prefabs/Images/Circle.png
+- Assets/Prefabs/Images/Body3_3.png
 Dependencies: []

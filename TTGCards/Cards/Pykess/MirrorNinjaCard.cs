@@ -40,7 +40,7 @@ namespace TTGC.Cards
 
         protected override GameObject GetCardArt()
         {
-            return null;
+            return TTGC.ArtAssets_Pykess.LoadAsset<GameObject>("C_MirrorNinja");
         }
 
         protected override string GetDescription()

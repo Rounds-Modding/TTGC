@@ -71,7 +71,7 @@ namespace TTGC.Cards
 
         protected override GameObject GetCardArt()
         {
-            return null;
+            return TTGC.ArtAssets_Pykess.LoadAsset<GameObject>("C_ShieldNinja");
         }
 
         protected override string GetDescription()
