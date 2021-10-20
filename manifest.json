@@ -1,0 +1,16 @@
+{
+    "name": "TimeToGrind_Cards",
+    "version_number": "0.0.0",
+    "website_url": "https://github.com/Rounds-Modding/TTGC",
+    "description": "The official TimeToGrind card pack!",
+    "dependencies": [
+        "Pykess-ModdingUtils-0.2.0",
+        "Pykess-TemporaryStatsPatch-0.0.0",
+        "Pykess-CardChoiceSpawnUniqueCardPatch-0.1.7",
+	"Pykess-PlayerJumpPatch-0.0.2",
+    "Pykess-LegRaycastersPatch-0.0.0",
+        "willis81808-UnboundLib-2.7.3",
+	"willis81808-MMHook-1.0.0",
+	"BepInEx-BepInExPack_ROUNDS-5.4.1100"
+    ]
+}

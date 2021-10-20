@@ -1,9 +1,9 @@
 ManifestFileVersion: 0
-CRC: 3757792558
+CRC: 570954780
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 41fc698501f8323fb3788d7bd797bf9d
+    Hash: 0c28ed3e075367c52ea7616ea78e31ae
   TypeTreeHash:
     serializedVersion: 2
     Hash: 4625f5a2a44c3f80cf8bc89e157ff873
@@ -42,14 +42,18 @@ ClassTypes:
 - Class: 224
   Script: {instanceID: 0}
 Assets:
+- Assets/Prefabs/SwarmFall.anim
+- Assets/Prefabs/C_SentryGunNinja.prefab
 - Assets/Prefabs/Background 1.controller
 - Assets/Prefabs/Images/Gun.png
 - Assets/Prefabs/Background 3.controller
+- Assets/Prefabs/C_PoisonNinja.prefab
 - Assets/Prefabs/Images/Body_1a.png
 - Assets/Prefabs/Images/Body1_3.png
 - 'Assets/Prefabs/Images/Body1 #98391.png'
 - Assets/Prefabs/TTGFace.prefab
 - Assets/Prefabs/ShieldWake.controller
+- Assets/Prefabs/Swarm.anim
 - Assets/Prefabs/Images/Orb_White2.png
 - Assets/Prefabs/Images/CircleHollow3Blur.png
 - Assets/Prefabs/Images/Babyteeth_02.png
@@ -59,20 +63,29 @@ Assets:
 - Assets/Prefabs/AgileBckground.anim
 - Assets/Prefabs/DoppelgangerNinja.anim
 - Assets/Prefabs/Images/E_10_grumpy.png
+- Assets/Prefabs/Tears.anim
 - Assets/Prefabs/AnimationClip/Anim_BgDots1.anim
 - Assets/Prefabs/C_FloatingNinja.prefab
+- Assets/Prefabs/Swarms.controller
 - 'Assets/Prefabs/Images/Body1 #94004.png'
+- Assets/Prefabs/C_NinjaSwarm.prefab
 - Assets/Prefabs/ColdNinja.anim
 - Assets/Prefabs/C_QuickReload.prefab
+- Assets/Prefabs/SwarmMinionSpinCW.anim
 - Assets/Prefabs/Images/Snowflake.png
 - Assets/Prefabs/Images/Body_2.png
 - 'Assets/Prefabs/Images/Body1 #98352.png'
 - Assets/Prefabs/AgileNinja.anim
+- Assets/Prefabs/Images/Tears1.png
+- Assets/Prefabs/Background 8.controller
+- Assets/Prefabs/Swarm.controller
 - 'Assets/Prefabs/Images/Body1 #98095.png'
 - Assets/Prefabs/Face.controller
 - Assets/Prefabs/Images/reference.png
+- Assets/Prefabs/Background 7.controller
 - Assets/Prefabs/FloatingBackground.anim
 - Assets/Prefabs/C_ShieldNinja.prefab
+- Assets/Prefabs/Minion (1).controller
 - Assets/Prefabs/Images/Body2.png
 - Assets/Prefabs/Images/Body_Back1.png
 - Assets/Prefabs/AnimationClip/BG.controller
@@ -84,9 +97,13 @@ Assets:
 - 'Assets/Prefabs/Images/Body1 #98426.png'
 - Assets/Prefabs/Body 2.controller
 - Assets/Prefabs/AnimatorController/BG_Dots.controller
+- Assets/Prefabs/PoisonBackground.anim
 - Assets/Prefabs/Images/Rambo_02.png
 - Assets/Prefabs/FloatingNinjaFace.anim
 - Assets/Prefabs/Background 2.controller
+- Assets/Prefabs/Body 6.controller
+- Assets/Prefabs/Background 9.controller
+- Assets/Prefabs/SentryGunNinjaBackground.anim
 - 'Assets/Prefabs/Images/Body1 #98216.png'
 - Assets/Prefabs/AnimationClip/BG 1.controller
 - 'Assets/Prefabs/Images/Body1 #98029.png'
@@ -108,6 +125,7 @@ Assets:
 - Assets/Prefabs/Images/Body_small1.png
 - Assets/Prefabs/SnowFlakes.controller
 - Assets/Prefabs/Body 3.controller
+- Assets/Prefabs/Tears.controller
 - Assets/Prefabs/Background 5.controller
 - Assets/Prefabs/Images/E_21_Mask.png
 - 'Assets/Prefabs/Images/Body1 #98123.png'
@@ -116,8 +134,10 @@ Assets:
 - 'Assets/Prefabs/Images/Body1 #98198.png'
 - Assets/Prefabs/Images/DotsDetail_2.png
 - Assets/Prefabs/Background 6.controller
+- Assets/Prefabs/SentryGunNinja.anim
 - Assets/Prefabs/Images/Body3_2.png
 - Assets/Prefabs/SnowFlakes.anim
+- Assets/Prefabs/SwarmBackground.anim
 - Assets/Prefabs/C_AgileNinja.prefab
 - 'Assets/Prefabs/Images/Body1 #98001.png'
 - 'Assets/Prefabs/Images/Body_1 #98212.png'
@@ -126,8 +146,10 @@ Assets:
 - Assets/Prefabs/Images/E_13_slightlySad.png
 - Assets/Prefabs/Body 4.controller
 - Assets/Prefabs/Images/Snowflake2.png
+- Assets/Prefabs/PoisonNinja.anim
 - Assets/Prefabs/Images/TTGBackgroundSource.png
 - Assets/Prefabs/ShieldWake.anim
+- Assets/Prefabs/SwarmMinionSpin.anim
 - Assets/Prefabs/FG_Dots.controller
 - Assets/Prefabs/Images/Flakes1.png
 - 'Assets/Prefabs/Images/Body1 #98073.png'
@@ -135,6 +157,7 @@ Assets:
 - Assets/Prefabs/AnimatorController/BG (2) 1.controller
 - Assets/Prefabs/Body 1.controller
 - Assets/Prefabs/ColdBackground.anim
+- Assets/Prefabs/Minion.controller
 - Assets/Prefabs/FG_DotsAnim.anim
 - Assets/Prefabs/Images/TTGBackground.png
 - Assets/Prefabs/Images/Body3.png
@@ -148,4 +171,5 @@ Assets:
 - 'Assets/Prefabs/Images/Body1 #97969.png'
 - Assets/Prefabs/Images/Circle.png
 - Assets/Prefabs/Images/Body3_3.png
+- Assets/Prefabs/Body 5.controller
 Dependencies: []

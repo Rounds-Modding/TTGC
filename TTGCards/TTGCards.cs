@@ -65,7 +65,7 @@ namespace TTGC
 
         private const string ModId = "ttg.rounds.plugins.ttgcards";
 
-        private const string ModName = "Time To Grind Cards";
+        private const string ModName = "TimeToGrind Cards";
         internal static AssetBundle ArtAssets_Pykess;
     }
 }
