@@ -167,9 +167,9 @@ namespace TTGC.Cards
         {
             return "TTG";
         }
-        internal static void callback(CardInfo card)
+        public override void Callback()
         {
-            card.gameObject.AddComponent<ExtraName>();
+            this.gameObject.AddComponent<ExtraName>();
         }
         
         internal static IEnumerator WaitForAIs(IGameModeHandler gm)

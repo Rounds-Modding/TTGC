@@ -25,7 +25,7 @@ namespace TTGC
     [BepInDependency("pykess.rounds.plugins.cardchoicespawnuniquecardpatch", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("pykess.rounds.plugins.playerjumppatch", BepInDependency.DependencyFlags.HardDependency)] // fixes multiple jumps
     [BepInDependency("pykess.rounds.plugins.legraycasterspatch", BepInDependency.DependencyFlags.HardDependency)] // fixes physics for small players
-    [BepInPlugin(ModId, ModName, "0.0.0.0")]
+    [BepInPlugin(ModId, ModName, "0.0.1")]
     [BepInProcess("Rounds.exe")]
     public class TTGC : BaseUnityPlugin
     {
@@ -36,7 +36,7 @@ namespace TTGC
         private void Start()
         {
             // register credits with unbound
-            Unbound.RegisterCredits(ModName, new string[] { "TimeToGrind", "Pykess" }, new string[] { "github", "commission your own mod from pykess" },new string[] { "https://github.com/Rounds-Modding/TTGC", "https://www.buymeacoffee.com/Pykess" });
+            Unbound.RegisterCredits(ModName, new string[] { "TimeToGrind", "Pykess" }, new string[] { "github", "support pykess" },new string[] { "https://github.com/Rounds-Modding/TTGC", "https://ko-fi.com/pykess" });
 
             TTGC.ArtAssets_Pykess = AssetUtils.LoadAssetBundleFromResources("ttgcpykessassetbundle", typeof(TTGC).Assembly);
             if (TTGC.ArtAssets_Pykess == null)
@@ -46,15 +46,15 @@ namespace TTGC
 
             // build all cards
 
-            CustomCard.BuildCard<ColdNinjaCard>(ColdNinjaCard.callback);
-            CustomCard.BuildCard<MirrorNinjaCard>(MirrorNinjaCard.callback);
-            CustomCard.BuildCard<DoppelgangerNinjaCard>(DoppelgangerNinjaCard.callback);
-            CustomCard.BuildCard<NinjaSwarmCard>(NinjaSwarmCard.callback);
-            CustomCard.BuildCard<ShieldNinjaCard>(ShieldNinjaCard.callback);
-            CustomCard.BuildCard<PoisonNinjaCard>(PoisonNinjaCard.callback);
-            CustomCard.BuildCard<SentryGunNinjaCard>(SentryGunNinjaCard.callback);
-            CustomCard.BuildCard<AgileNinjaCard>(AgileNinjaCard.callback);
-            CustomCard.BuildCard<FloatingNinjaCard>(FloatingNinjaCard.callback);
+            CustomCard.BuildCard<ColdNinjaCard>();
+            CustomCard.BuildCard<MirrorNinjaCard>();
+            CustomCard.BuildCard<DoppelgangerNinjaCard>();
+            CustomCard.BuildCard<NinjaSwarmCard>();
+            CustomCard.BuildCard<ShieldNinjaCard>();
+            CustomCard.BuildCard<PoisonNinjaCard>();
+            CustomCard.BuildCard<SentryGunNinjaCard>();
+            CustomCard.BuildCard<AgileNinjaCard>();
+            CustomCard.BuildCard<FloatingNinjaCard>();
 
             ModdingUtils.Utils.Cards.instance.AddOnRemoveCallback(MinionCardBase.OnRemoveCallback);
 
